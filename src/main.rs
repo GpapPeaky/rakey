@@ -5,7 +5,8 @@ struct Shape {
     size: f32,
     speed: f32,
     x: f32,
-    y: f32
+    y: f32,
+    collided: bool,
 }
 
 impl Shape {
@@ -29,18 +30,21 @@ async fn main() {
 
     const PLAYER_SPEED: f32 = 150.0;
 
+    let mut bullets: Vec<Shape> = vec![];
+
     let mut squares= vec![];
     let mut circle = Shape {
         size: 32.0,
         speed: 150.0,
         x: screen_width() / 2.0,
-        y: screen_height() / 2.0
+        y: screen_height() / 2.0,
+        collided: false
     };
 
     let mut game_over = false;
 
     loop {
-        // Update
+        // Updates //
         let dt = get_frame_time(); // Get delta time
 
         if rand::gen_range(0, 99) >= 95 {
@@ -49,16 +53,21 @@ async fn main() {
                 size,
                 speed: rand::gen_range(50.0, 150.0),
                 x: rand::gen_range(size / 2.0, screen_width() - size / 2.0),
-                y: -size
+                y: -size,
+                collided: false
             });
         }
 
         for square in &mut squares {
             square.y += square.speed * dt;
         }
+        for bullet in &mut bullets {
+            bullet.y -= bullet.speed * dt;
+        }
 
-        /* Remove squares outside teh screen */
+        // Remove squares and bullets outside the screen
         squares.retain(|square| square.y < screen_height() + square.size);
+        bullets.retain(|bullet| bullet.y > 0.0 - bullet.size / 2.0);
 
         if !game_over {
             if is_key_down(KeyCode::Up) {
@@ -73,9 +82,24 @@ async fn main() {
             if is_key_down(KeyCode::Right) {
                 circle.x += PLAYER_SPEED * dt;
             }
+
+            if is_key_pressed(KeyCode::Q) {
+                bullets.push( Shape{
+                        x: circle.x,
+                        y: circle.y,
+                        speed: circle.speed * 2.0,
+                        size: 8.5,
+                        collided: false
+                    }
+                );
+            }
         }
 
-        // Collision
+        // Limit the circles movement
+        circle.x = clamp(circle.x, 0.0, screen_width());
+        circle.y = clamp(circle.y, 0.0, screen_height());
+
+        // Player-square collision
         if squares.iter().any(|square| circle.collides_with(square)) {
             game_over = true;
         }
@@ -83,20 +107,27 @@ async fn main() {
         // Restart when dead
         if game_over && is_key_pressed(KeyCode::Space) {
             squares.clear();
+            bullets.clear();
             circle.x = screen_width() / 2.0;
             circle.y = screen_height() / 2.0;
             game_over = false;
         }
 
-        // Exit loop
-        if is_key_down(KeyCode::E) {
-            break;
+        // Square-bullet collisions
+        for square in squares.iter_mut() {
+            for bullet in bullets.iter_mut() {
+                if bullet.collides_with(square) {
+                    bullet.collided = true;
+                    square.collided = true;
+                }
+            }
         }
 
-        /* Limit the circle's movement */
-        circle.x = clamp(circle.x, 0.0, screen_width());
-        circle.y = clamp(circle.y, 0.0, screen_height());
+        // Remove collided shapes
+        squares.retain(|square| !square.collided);
+        bullets.retain(|bullet| !bullet.collided);
 
+        // Render //
         clear_background(WHITE);
 
         draw_circle(circle.x, circle.y, circle.size, RED);
@@ -108,6 +139,10 @@ async fn main() {
                 square.size,
                 GREEN
             );
+        }
+
+        for bullet in &bullets {
+            draw_circle(bullet.x, bullet.y, bullet.size / 2.0, RED);
         }
 
         if game_over {
