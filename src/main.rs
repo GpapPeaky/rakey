@@ -1,28 +1,7 @@
 use macroquad::prelude::*;
 
-// Falling shape
-struct Shape {
-    size: f32,
-    speed: f32,
-    x: f32,
-    y: f32,
-    collided: bool,
-}
-
-impl Shape {
-    fn collides_with(&self, other: &Self) -> bool {
-        self.rect().overlaps(&other.rect())
-    }
-
-    fn rect(&self) -> Rect {
-        Rect {
-            x: self.x - self.size / 2.0,
-            y: self.y - self.size / 2.0,
-            w: self.size,
-            h: self.size
-        }
-    }
-}
+mod shape;
+use shape::*;
 
 #[macroquad::main("rakey")]
 async fn main() {
@@ -32,7 +11,7 @@ async fn main() {
 
     let mut bullets: Vec<Shape> = vec![];
 
-    let mut squares= vec![];
+    let mut squares: Vec<Shape>  = vec![];
     let mut circle = Shape {
         size: 32.0,
         speed: 150.0,
@@ -47,27 +26,11 @@ async fn main() {
         // Updates //
         let dt = get_frame_time(); // Get delta time
 
-        if rand::gen_range(0, 99) >= 95 {
-            let size = rand::gen_range(16.0, 64.0);
-            squares.push(Shape{
-                size,
-                speed: rand::gen_range(50.0, 150.0),
-                x: rand::gen_range(size / 2.0, screen_width() - size / 2.0),
-                y: -size,
-                collided: false
-            });
-        }
-
-        for square in &mut squares {
-            square.y += square.speed * dt;
-        }
-        for bullet in &mut bullets {
-            bullet.y -= bullet.speed * dt;
-        }
+        gen_rects(&mut squares);
 
         // Remove squares and bullets outside the screen
-        squares.retain(|square| square.y < screen_height() + square.size);
-        bullets.retain(|bullet| bullet.y > 0.0 - bullet.size / 2.0);
+        update_squares(&mut squares, dt);
+        update_bullets(&mut bullets, dt);
 
         if !game_over {
             if is_key_down(KeyCode::Up) {
@@ -114,35 +77,19 @@ async fn main() {
         }
 
         // Square-bullet collisions
-        for square in squares.iter_mut() {
-            for bullet in bullets.iter_mut() {
-                if bullet.collides_with(square) {
-                    bullet.collided = true;
-                    square.collided = true;
-                }
-            }
-        }
-
-        // Remove collided shapes
-        squares.retain(|square| !square.collided);
-        bullets.retain(|bullet| !bullet.collided);
+        squares_to_bullets_collision(&mut squares, &mut bullets);
 
         // Render //
         clear_background(WHITE);
 
         draw_circle(circle.x, circle.y, circle.size, RED);
 
-        for square in &squares {
-            draw_rectangle(square.x,
-                square.y,
-                square.size,
-                square.size,
-                GREEN
-            );
+        for square in squares.iter_mut() {
+            draw_shape(square, ShapeType::SHAPERECT);
         }
 
-        for bullet in &bullets {
-            draw_circle(bullet.x, bullet.y, bullet.size / 2.0, RED);
+        for bullet in bullets.iter_mut() {
+            draw_shape(bullet, ShapeType::SHAPECIRCLE);
         }
 
         if game_over {
