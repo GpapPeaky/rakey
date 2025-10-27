@@ -17,7 +17,8 @@ async fn main() {
         speed: 150.0,
         x: screen_width() / 2.0,
         y: screen_height() / 2.0,
-        collided: false
+        collided: false,
+        t: ShapeType::SHAPECIRCLE
     };
 
     let mut game_over = false;
@@ -45,16 +46,13 @@ async fn main() {
             if is_key_down(KeyCode::Right) {
                 circle.x += PLAYER_SPEED * dt;
             }
-
+            if is_key_down(KeyCode::E) {
+                break; // Loop exit
+            }
             if is_key_pressed(KeyCode::Q) {
-                bullets.push( Shape{
-                        x: circle.x,
-                        y: circle.y,
-                        speed: circle.speed * 2.0,
-                        size: 8.5,
-                        collided: false
-                    }
-                );
+                let mut s = Shape::new_shape(20.0, circle.speed * 2.0, circle.x, circle.y);
+                s.t = ShapeType::SHAPECIRCLE; 
+                bullets.push(s);
             }
         }
 
@@ -82,15 +80,9 @@ async fn main() {
         // Render //
         clear_background(WHITE);
 
-        draw_circle(circle.x, circle.y, circle.size, RED);
-
-        for square in squares.iter_mut() {
-            draw_shape(square, ShapeType::SHAPERECT);
-        }
-
-        for bullet in bullets.iter_mut() {
-            draw_shape(bullet, ShapeType::SHAPECIRCLE);
-        }
+        draw_shape(&mut circle);
+        draw_shapes(&mut squares);
+        draw_shapes(&mut bullets);
 
         if game_over {
             draw_text("GAME OVER", screen_width() / 2.0, screen_height() / 2.0, 50.0, RED);

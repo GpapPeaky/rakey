@@ -3,6 +3,7 @@ use macroquad::prelude::*;
 // Shape types
 #[derive(PartialEq)]
 pub enum ShapeType {
+    SHAPENIL,
     SHAPECIRCLE,
     SHAPERECT
 }
@@ -13,7 +14,8 @@ pub struct Shape {
     pub speed: f32,
     pub x: f32,
     pub y: f32,
-    pub collided: bool
+    pub collided: bool,
+    pub t: ShapeType
 }
 
 impl Shape {
@@ -24,7 +26,8 @@ impl Shape {
             speed: speed,
             x: x,
             y: y,
-            collided: false
+            collided: false,
+            t: ShapeType::SHAPENIL
         }
     }
 
@@ -35,7 +38,7 @@ impl Shape {
             x: self.x - self.size / 2.0,
             y: self.y - self.size / 2.0,
             w: self.size,
-            h: self.size
+            h: self.size,   
         }
     }
 
@@ -45,10 +48,10 @@ impl Shape {
     }
 }
 
-pub fn add_shape(vector: &mut Vec<Shape>, size: f32, speed: f32, x: f32, y: f32) {
-    vector.push(
-        Shape::new_shape(size, speed, x, y)
-    );
+pub fn add_shape(vector: &mut Vec<Shape>, size: f32, speed: f32, x: f32, y: f32, t: ShapeType) {
+    let mut s = Shape::new_shape(size, speed, x, y);
+    s.t = t;
+    vector.push(s);
 }
 
 pub fn gen_rects(squares: &mut Vec<Shape>) {
@@ -57,7 +60,7 @@ pub fn gen_rects(squares: &mut Vec<Shape>) {
         let speed = rand::gen_range(25.0, 105.0);
         let x = rand::gen_range(0.0, screen_height());
 
-        add_shape(squares, size, speed, x, -size);
+        add_shape(squares, size, speed, x, -size, ShapeType::SHAPERECT);
     }
 }
 
@@ -95,10 +98,16 @@ pub fn squares_to_bullets_collision(squares: &mut Vec<Shape>,bullets: &mut Vec<S
     bullets.retain(|bullet| !bullet.collided);
 }
 
-pub fn draw_shape(s: &mut Shape, t: ShapeType) {
-    if t == ShapeType::SHAPECIRCLE {
+pub fn draw_shape(s: &mut Shape) {
+    if s.t == ShapeType::SHAPECIRCLE {
         draw_circle(s.x, s.y, s.size / 2.0, RED);
-    } else if t == ShapeType::SHAPERECT {
+    } else if s.t == ShapeType::SHAPERECT {
         draw_rectangle(s.x, s.y, s.size, s.size, GREEN);
+    }
+}
+
+pub fn draw_shapes(v: &mut Vec<Shape>) {
+    for s in v {
+        draw_shape(s);
     }
 }
