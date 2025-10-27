@@ -1,4 +1,5 @@
 use macroquad::prelude::*;
+use std::fs::{self};
 
 mod shape;
 use shape::*;
@@ -22,6 +23,12 @@ async fn main() {
     };
 
     let mut game_over = false;
+
+    // Scoring
+    let mut score: u32 = 0;
+    let mut high_score = fs::read_to_string("highscore.dat")
+        .map_or(Ok(0), |i| i.parse::<u32>())
+        .unwrap_or(0);
 
     loop {
         // Updates //
@@ -65,17 +72,29 @@ async fn main() {
             game_over = true;
         }
 
-        // Restart when dead
-        if game_over && is_key_pressed(KeyCode::Space) {
-            squares.clear();
-            bullets.clear();
-            circle.x = screen_width() / 2.0;
-            circle.y = screen_height() / 2.0;
-            game_over = false;
+        // Square-bullet collisions
+        // Return the produced score
+        score += squares_to_bullets_collision(&mut squares, &mut bullets);
+        high_score = high_score.max(score);
+
+        // Write the new highscore
+        if score == high_score {
+            fs::write("highscore.dat", high_score.to_string()).ok();
         }
 
-        // Square-bullet collisions
-        squares_to_bullets_collision(&mut squares, &mut bullets);
+        if game_over {
+            draw_text("GAME OVER", screen_width() / 2.0, screen_height() / 2.0, 50.0, RED);
+            
+            // Restart when dead
+            if is_key_pressed(KeyCode::Space) {
+                squares.clear();
+                bullets.clear();
+                score = 0;
+                circle.x = screen_width() / 2.0;
+                circle.y = screen_height() / 2.0;
+                game_over = false;
+            }
+        }
 
         // Render //
         clear_background(WHITE);
@@ -84,9 +103,7 @@ async fn main() {
         draw_shapes(&mut squares);
         draw_shapes(&mut bullets);
 
-        if game_over {
-            draw_text("GAME OVER", screen_width() / 2.0, screen_height() / 2.0, 50.0, RED);
-        }
+        draw_text(&score.to_string(), 20.0, 20.0, 24.5, BLUE);
 
         next_frame().await;
     }
