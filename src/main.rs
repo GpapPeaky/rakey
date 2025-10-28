@@ -1,5 +1,8 @@
 use macroquad::prelude::*;
 use std::fs::{self};
+use macroquad_particles::{Emitter};
+
+mod particle;
 
 mod shader;
 use shader::*;
@@ -24,8 +27,9 @@ async fn main() {
     const PLAYER_SPEED: f32 = 150.0;
 
     let mut bullets: Vec<Shape> = vec![];
+    let mut squares: Vec<Shape> = vec![];
+    let mut explosions: Vec<(Emitter, Vec2)> = vec![];
 
-    let mut squares: Vec<Shape>  = vec![];
     let mut circle = Shape {
         size: 32.0,
         speed: 150.0,
@@ -115,6 +119,7 @@ async fn main() {
                 if is_key_pressed(KeyCode::Space) {
                     squares.clear();
                     bullets.clear();
+                    explosions.clear();
                     score = 0;
                     circle.x = screen_width() / 2.0;
                     circle.y = screen_height() / 2.0;
@@ -168,16 +173,23 @@ async fn main() {
         
                 // Square-bullet collisions
                 // Return the produced score
-                score += squares_to_bullets_collision(&mut squares, &mut bullets);
+                score += squares_to_bullets_collision(&mut squares, &mut bullets, &mut explosions);
                 high_score = high_score.max(score);
                 // Write the new highscore
                 if score == high_score {
                     fs::write("highscore.dat", high_score.to_string()).ok();
                 }
 
+                // Retain valid particles
+                explosions.retain(|(explosion, _)| explosion.config.emitting);
+
                 draw_shape(&mut circle);
                 draw_shapes(&mut squares);
                 draw_shapes(&mut bullets);
+
+                for (explosion, coords) in explosions.iter_mut() {
+                    explosion.draw(*coords);
+                }
 
                 draw_text(
                     format!("Score: {}", score).as_str(),

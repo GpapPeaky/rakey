@@ -1,4 +1,7 @@
 use macroquad::prelude::*;
+use macroquad_particles::*;
+
+use crate::particle::*;
 
 // Shape types
 #[derive(PartialEq)]
@@ -84,7 +87,7 @@ pub fn update_bullets(bullets: &mut Vec<Shape>, dt: f32) {
     bullets.retain(|bullet| bullet.y > 0.0 - bullet.size / 2.0);
 }
 
-pub fn squares_to_bullets_collision(squares: &mut Vec<Shape>,bullets: &mut Vec<Shape>) -> u32 {
+pub fn squares_to_bullets_collision(squares: &mut Vec<Shape>,bullets: &mut Vec<Shape>, explosions: &mut Vec<(Emitter, Vec2)>) -> u32 {
     let mut score: u32 = 0; // Score to return
 
     for square in squares.iter_mut() {
@@ -92,6 +95,15 @@ pub fn squares_to_bullets_collision(squares: &mut Vec<Shape>,bullets: &mut Vec<S
             if bullet.collides_with(square) {
                 square.collided = true;
                 bullet.collided = true;
+
+                // Add particles
+                explosions.push((
+                                Emitter::new(EmitterConfig {
+                                    amount: square.size.round() as u32 * 2,
+                                    ..particle_explosion()
+                                }),
+                                vec2(square.x, square.y),
+                            ));
 
                 score = square.size as u32;
             }
