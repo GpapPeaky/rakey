@@ -6,6 +6,8 @@ mod editor_cursor;
 const ALPHA_VALUE: u8 = 255;
 const FILE_TEXT_X_MARGIN: f32 = 10.0;
 const FILE_TEXT_Y_MARGIN: f32 = 30.0;
+const TAB_SIZE: usize = 5;
+const TAB_PATTERN: &str = "     ";
 
 const C_CONTROL_FLOW_STATEMENTS: [&str ; 12] = [
     "if",
@@ -75,8 +77,80 @@ pub fn calibrate_string_color(string: &str) -> Color {
     }
 }
 
+pub fn record_special_keys(cursor_x: &mut usize, cursor_y: &mut usize, text: &mut Vec<String>) -> bool {
+    if is_key_pressed(KeyCode::Backspace) {
+        if *cursor_x > 0 {
+            let line = &mut text[*cursor_y];
+            
+            if *cursor_x == 0 || line.is_empty() {
+                return true;
+            }
+
+            // Check if we're just after a tab pattern
+            if *cursor_x >= TAB_SIZE {
+                let end = *cursor_x;
+                let start = end - TAB_SIZE;
+                if &line[start..end] == TAB_PATTERN {
+                    // remove the tab (4 spaces)
+                    for _ in 0..TAB_SIZE {
+                        line.remove(start);
+                    }
+
+                    *cursor_x -= TAB_SIZE;
+
+                    return true;
+                }
+            }
+
+            // Normal removal
+            line.remove(*cursor_x - 1);
+            *cursor_x -= 1;
+        } else if *cursor_y > 0 {
+            // Merge with previous line
+            let current_line = text.remove(*cursor_y);
+            *cursor_y -= 1;
+            *cursor_x = text[*cursor_y].len();
+            text[*cursor_y].push_str(&current_line);
+        }
+
+        // We will check if there was a special key pressed, and we will return from the 
+        // normal keyboard recording function
+        return true;
+    }
+
+    if is_key_pressed(KeyCode::Tab) {
+        for i in 0..TAB_SIZE {
+            text[*cursor_y].insert(*cursor_x as usize + i, ' ');
+        }
+
+        *cursor_x += TAB_SIZE;
+
+        return true;
+    }
+
+    if is_key_pressed(KeyCode::Enter) {
+        let rest = text[*cursor_y].split_off(*cursor_x);
+        *cursor_y += 1;
+        *cursor_x = 0;
+        text.insert(*cursor_y, rest);
+
+        return true;
+    }
+
+    false
+}
+
 pub fn record_keyboard_to_file_text(cursor_x: &mut usize, cursor_y: &mut usize, text: &mut Vec<String>) {
     // let c = get_char_pressed().unwrap(); // Unwrap removes the Result/Option wrapper.
+
+    if text.is_empty() { // Allocate memory for a new string
+        text.push(String::new());
+    }
+
+    if record_special_keys(cursor_x, cursor_y, text) {
+        return; // Handle the special key and terminate the call, as to 
+        // not record any special escape character
+    }
 
     if let Some(c) = get_char_pressed() {
         // We will also handle smart/smarter identation here.
@@ -87,6 +161,12 @@ pub fn record_keyboard_to_file_text(cursor_x: &mut usize, cursor_y: &mut usize, 
         let line = &mut text[*cursor_y];
 
         match c {
+            '\u{8}' | '\r' | '\n' | '\t' => {
+                // We also have to pre-terminate with these special characters,
+                // since input is passed in a queue
+                return; // Special characters will be handled elsewhere
+            }
+
             _ => {
                 line.insert(*cursor_x, c); // Normal insertion.
                 *cursor_x += 1;
@@ -100,11 +180,14 @@ pub fn draw(text: &Vec<String>, cursor_x: usize, cursor_y: usize) {
     let start_x = FILE_TEXT_X_MARGIN;
     let start_y = FILE_TEXT_Y_MARGIN;
     let font_size = 25.0;
-    let line_spacing = font_size * 1.2;
+    let line_spacing = font_size;
+
+    let mut x;
+    let mut y;
 
     for (line_index, line) in text.iter().enumerate() {
-        let mut x = start_x;
-        let y = start_y + line_index as f32 * line_spacing;
+        x = start_x;
+        y = start_y + line_index as f32 * line_spacing;
 
         // Split line into words and spaces
         for word in line.split_inclusive(|c: char| c.is_whitespace()) {
@@ -117,5 +200,23 @@ pub fn draw(text: &Vec<String>, cursor_x: usize, cursor_y: usize) {
                 x += char_width;
             }
         }
+
+    }
+
+    if cursor_y < text.len() {
+        let line = &text[cursor_y];
+        let cursor_text = &line[..cursor_x.min(line.len())];
+        let text_before_cursor = measure_text(cursor_text, None, font_size as u16, 1.0);
+        let cursor_x_pos = start_x + text_before_cursor.width;
+        let cursor_y_pos = start_y + cursor_y as f32 * line_spacing;
+
+        draw_line(
+            cursor_x_pos,
+            cursor_y_pos - font_size * 0.8,
+            cursor_x_pos,
+            cursor_y_pos + font_size * 0.2,
+            1.5,
+            WHITE,
+        );
     }
 }
