@@ -161,6 +161,10 @@ pub fn record_keyboard_to_file_text(cursor_x: &mut usize, cursor_y: &mut usize, 
             text.push(String::new());
         }
 
+        if c.is_control() {
+            return; // Control characters are handled elsewhere
+        }
+
         let line = &mut text[*cursor_y];
 
         match c {
