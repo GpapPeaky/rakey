@@ -16,7 +16,7 @@ async fn main() {
     let mut file_cursor = ( 0, 0 );
 
     loop {
-        clear_background(BLACK);
+        clear_background(BACKGROUND_COLOR);
 
         file_text_navigation(&mut file_cursor, &mut file_text);
 

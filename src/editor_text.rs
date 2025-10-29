@@ -9,15 +9,19 @@ const FILE_TEXT_Y_MARGIN: f32 = 60.0;
 const TAB_SIZE: usize = 5;
 const TAB_PATTERN: &str = "     ";
 
-const DEFAULT_TEXT_COLOR: Color = WHITE;
-const PUNCTUATION_COLOR: Color = YELLOW;
+pub const BACKGROUND_COLOR: Color     = Color::from_rgba( 30,  30,  36, 255);  // Deep gray-blue background
+const IDENTIFIER_COLOR: Color         = Color::from_rgba(220, 0, 155, 255);
+const PUNCTUATION_COLOR: Color        = Color::from_rgba(150, 150, 150, 255);  // Medium gray
+const CONTROL_FLOW_COLOR: Color       = Color::from_rgba(198, 120, 221, 255);  // Soft purple (if, else, return)
+const STORAGE_CLASS_COLOR: Color      = Color::from_rgba( 97, 175, 239, 255);  // Bright sky blue (static, extern)
+const TYPE_QUALIFIER_COLOR: Color     = Color::from_rgba(229, 192, 123, 255);  // Warm yellow (const, volatile)
+const COMPOSITE_TYPE_COLOR: Color     = Color::from_rgba(224, 108, 117, 255);  // Red-pink (struct, enum)
+const MISC_COLOR: Color               = Color::from_rgba(209, 154, 102, 255);  // Orange-brown (sizeof, inline)
+const DATA_TYPE_COLOR: Color          = Color::from_rgba( 86, 182, 194, 255);  // Teal (int, char, void)
+const NUMBER_LITERAL_COLOR: Color     = Color::from_rgba(152, 195, 121, 255);  // Green (numeric literals)
+const STRING_LITERAL_COLOR: Color     = Color::from_rgba(171, 233, 137, 255);  // Lime-green (strings)
+const COMMENT_COLOR: Color            = Color::from_rgba( 92,  99, 112, 255);  // Dim gray (comments)
 
-const CONTROL_FLOW_COLOR: Color = PINK;
-const STORAGE_CLASS_COLOR: Color = BLUE;
-const TYPE_QUALIFIER_COLOR: Color = MAGENTA;
-const COMPOSITE_TYPE_COLOR: Color = RED;
-const MISC_COLOR: Color = PURPLE;
-const DATA_TYPE_COLOR: Color = ORANGE;
 
 const C_CONTROL_FLOW_STATEMENTS: [&str ; 12] = [
     "if",
@@ -87,8 +91,10 @@ pub fn calibrate_string_color(string: &str) -> Color {
         return MISC_COLOR;
     } else if C_DATA_TYPES.contains(&string) {
         return DATA_TYPE_COLOR;
+    } else if string.chars().all(|c| c.is_ascii_digit()) {
+        return NUMBER_LITERAL_COLOR;
     } else {
-        return DEFAULT_TEXT_COLOR;
+        return IDENTIFIER_COLOR;
     }
 }
 
@@ -206,37 +212,49 @@ pub fn draw(text: &Vec<String>, cursor_x: usize, cursor_y: usize) {
     let mut x;
     let mut y;
 
-    let pattern = Regex::new(r"[\w\*]+|[^\w\s]+|\s+").unwrap(); 
+    // Regex pattern order matters: comments, strings, numbers, words, punctuation, whitespace
+    let token_pattern = Regex::new(
+        r#"//[^\n]*|/\*.*?\*/|"(?:\\.|[^"\\])*"|\b\d+(?:\.\d+)?\b|[\w\*]+|[^\w\s]+|\s+"#
+    ).unwrap();
 
     for (line_index, line) in text.iter().enumerate() {
         x = start_x;
         y = start_y + line_index as f32 * line_spacing;
 
-        // Match to the pattern
-        for word in pattern.find_iter(line) {
-            let token = word.as_str();
+        for cap in token_pattern.find_iter(line) {
+            let token = cap.as_str();
 
-            // Word cleanup and color calibration
-            let clean = token.trim_matches(|c: char| !c.is_alphanumeric() && c != '_');
-            let color = calibrate_string_color(clean);
+            let color = if token.starts_with("//") || token.starts_with("/*") {
+                COMMENT_COLOR
+            } else if token.starts_with('"') && token.ends_with('"') {
+                STRING_LITERAL_COLOR
+            } else if token.chars().all(|c| c.is_whitespace()) {
+                IDENTIFIER_COLOR
+            } else if token.chars().all(|c| !c.is_alphanumeric() && !c.is_whitespace() && c != '_') {
+                PUNCTUATION_COLOR
+            } else if token.chars().all(|c| c.is_ascii_digit() || c == '.') {
+                NUMBER_LITERAL_COLOR
+            } else {
+                // Normal identifiers/keywords
+                let clean = token.trim_matches(|c: char| !c.is_alphanumeric() && c != '_');
+                calibrate_string_color(clean)
+            };
 
             for ch in token.chars() {
                 draw_text(&ch.to_string(), x, y, font_size, color);
-
                 let char_width = measure_text(&ch.to_string(), None, font_size as u16, 1.0).width;
                 x += char_width;
             }
         }
-
     }
 
+    // Draw cursor
     if cursor_y < text.len() {
         let line = &text[cursor_y];
         let cursor_text = &line[..cursor_x.min(line.len())];
         let text_before_cursor = measure_text(cursor_text, None, font_size as u16, 1.0);
         let cursor_x_pos = start_x + text_before_cursor.width;
         let cursor_y_pos = start_y + cursor_y as f32 * line_spacing;
-
         let cursor_width = 7.0;
 
         draw_line(
@@ -245,7 +263,7 @@ pub fn draw(text: &Vec<String>, cursor_x: usize, cursor_y: usize) {
             cursor_x_pos + cursor_width / 5.0,
             cursor_y_pos + font_size * 0.2,
             cursor_width,
-            DEFAULT_TEXT_COLOR,
+            IDENTIFIER_COLOR,
         );
     }
 }
