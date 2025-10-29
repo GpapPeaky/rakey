@@ -84,40 +84,49 @@ pub fn calibrate_string_color(string: &str) -> Color {
 
 pub fn record_special_keys(cursor_x: &mut usize, cursor_y: &mut usize, text: &mut Vec<String>) -> bool {
     if is_key_pressed(KeyCode::Backspace) {
-        if *cursor_x > 0 {
-            let line = &mut text[*cursor_y];
-            
-            if *cursor_x == 0 || line.is_empty() {
+        if text.is_empty() {
+            return true;
+        }
+    
+        // Clamp cursor_x to line length
+        let line = &mut text[*cursor_y];
+        let line_len = line.chars().count();
+        *cursor_x = (*cursor_x).min(line_len);
+    
+        if *cursor_x == 0 {
+            // Merge with previous line if possible
+            if *cursor_y > 0 {
+                let current_line = text.remove(*cursor_y);
+                *cursor_y -= 1;
+                *cursor_x = text[*cursor_y].chars().count();
+                text[*cursor_y].push_str(&current_line);
+            }
+            return true;
+        }
+    
+        let cursor_pos = *cursor_x;
+    
+        // Tab deletion
+        if cursor_pos >= TAB_SIZE {
+            let start_char = cursor_pos - TAB_SIZE;
+            let end_char = cursor_pos;
+            let start_byte = char_to_byte(line, start_char);
+            let end_byte = char_to_byte(line, end_char);
+    
+            if &line[start_byte..end_byte] == TAB_PATTERN {
+                line.replace_range(start_byte..end_byte, "");
+                *cursor_x -= TAB_SIZE;
                 return true;
             }
-
-            // Check if we're just after a tab pattern
-            if *cursor_x >= TAB_SIZE {
-                let end = *cursor_x;
-                let start = end - TAB_SIZE;
-
-                let end_byte = char_to_byte(line, end);
-                let start_byte = char_to_byte(line, start);
-                if &line[start_byte..end_byte] == TAB_PATTERN {
-                    line.replace_range(start_byte..end_byte, "");
-                    *cursor_x -= TAB_SIZE;
-                    return true;
-                }
-            }
-
-            // Normal removal
-            line.remove(*cursor_x - 1);
-            *cursor_x -= 1;
-        } else if *cursor_y > 0 {
-            // Merge with previous line
-            let current_line = text.remove(*cursor_y);
-            *cursor_y -= 1;
-            *cursor_x = text[*cursor_y].len();
-            text[*cursor_y].push_str(&current_line);
         }
-
-        // We will check if there was a special key pressed, and we will return from the 
-        // normal keyboard recording function
+    
+        // Normal deletion
+        let byte_idx = char_to_byte(line, cursor_pos - 1);
+        if byte_idx < line.len() {
+            line.remove(byte_idx);
+            *cursor_x -= 1;
+        }
+    
         return true;
     }
 
@@ -125,18 +134,16 @@ pub fn record_special_keys(cursor_x: &mut usize, cursor_y: &mut usize, text: &mu
         let line = &mut text[*cursor_y];
         let byte_idx = char_to_byte(line, *cursor_x);
         line.insert_str(byte_idx, TAB_PATTERN);
-
         *cursor_x += TAB_SIZE;
-
         return true;
     }
 
     if is_key_pressed(KeyCode::Enter) {
-        let rest = text[*cursor_y].split_off(*cursor_x);
+        let line = &mut text[*cursor_y];
+        let rest = line.split_off(char_to_byte(line, *cursor_x));
         *cursor_y += 1;
         *cursor_x = 0;
         text.insert(*cursor_y, rest);
-
         return true;
     }
 
@@ -160,13 +167,6 @@ pub fn record_keyboard_to_file_text(cursor_x: &mut usize, cursor_y: &mut usize, 
         while *cursor_y >= text.len() {
             text.push(String::new());
         }
-
-        if c.is_control() {
-            return; // Control characters are handled elsewhere
-        }
-
-        let line = &mut text[*cursor_y];
-
         match c {
             '\u{8}' | '\r' | '\n' | '\t' => {
                 // We also have to pre-terminate with these special characters,
@@ -175,6 +175,8 @@ pub fn record_keyboard_to_file_text(cursor_x: &mut usize, cursor_y: &mut usize, 
             }
 
             _ => {
+                let line = &mut text[*cursor_y];
+
                 let byte_idx = char_to_byte(line, *cursor_x);
 
                 line.insert(byte_idx, c); // Normal insertion.
@@ -224,7 +226,7 @@ pub fn draw(text: &Vec<String>, cursor_x: usize, cursor_y: usize) {
             cursor_y_pos - font_size * 0.8,
             cursor_x_pos,
             cursor_y_pos + font_size * 0.2,
-            1.5,
+            5.0,
             WHITE,
         );
     }
