@@ -1,13 +1,23 @@
 use macroquad::prelude::*;
+use regex::Regex;
 
 #[path = "editor_cursor.rs"]
 mod editor_cursor;
 
-const ALPHA_VALUE: u8 = 255;
-const FILE_TEXT_X_MARGIN: f32 = 10.0;
-const FILE_TEXT_Y_MARGIN: f32 = 30.0;
+const FILE_TEXT_X_MARGIN: f32 = 50.0;
+const FILE_TEXT_Y_MARGIN: f32 = 60.0;
 const TAB_SIZE: usize = 5;
 const TAB_PATTERN: &str = "     ";
+
+const DEFAULT_TEXT_COLOR: Color = WHITE;
+const PUNCTUATION_COLOR: Color = YELLOW;
+
+const CONTROL_FLOW_COLOR: Color = PINK;
+const STORAGE_CLASS_COLOR: Color = BLUE;
+const TYPE_QUALIFIER_COLOR: Color = MAGENTA;
+const COMPOSITE_TYPE_COLOR: Color = RED;
+const MISC_COLOR: Color = PURPLE;
+const DATA_TYPE_COLOR: Color = ORANGE;
 
 const C_CONTROL_FLOW_STATEMENTS: [&str ; 12] = [
     "if",
@@ -66,19 +76,19 @@ fn char_to_byte(line: &str, char_idx: usize) -> usize {
 
 pub fn calibrate_string_color(string: &str) -> Color {
     if C_CONTROL_FLOW_STATEMENTS.contains(&string) {
-        return Color::from_rgba(150, 150, 200, ALPHA_VALUE);
+        return CONTROL_FLOW_COLOR;
     } else if C_TYPE_QUALIFIERS.contains(&string) {
-        return Color::from_rgba(255, 255, 100, ALPHA_VALUE);
+        return TYPE_QUALIFIER_COLOR;
     } else if C_COMPOSITE_TYPES.contains(&string) {
-        return Color::from_rgba(200, 0, 50, ALPHA_VALUE);
+        return COMPOSITE_TYPE_COLOR;
     } else if C_STORAGE_CLASS_SPECIFIERS.contains(&string) {
-        return Color::from_rgba(0, 100, 250, ALPHA_VALUE);
+        return STORAGE_CLASS_COLOR;
     } else if C_MISC.contains(&string) {
-        return Color::from_rgba(100, 255, 25, ALPHA_VALUE);
+        return MISC_COLOR;
     } else if C_DATA_TYPES.contains(&string) {
-        return Color::from_rgba(100, 100, 255, ALPHA_VALUE);
+        return DATA_TYPE_COLOR;
     } else {
-        return Color::from_rgba(255, 255, 255, ALPHA_VALUE);
+        return DEFAULT_TEXT_COLOR;
     }
 }
 
@@ -196,15 +206,21 @@ pub fn draw(text: &Vec<String>, cursor_x: usize, cursor_y: usize) {
     let mut x;
     let mut y;
 
+    let pattern = Regex::new(r"[\w\*]+|[^\w\s]+|\s+").unwrap(); 
+
     for (line_index, line) in text.iter().enumerate() {
         x = start_x;
         y = start_y + line_index as f32 * line_spacing;
 
-        // Split line into words and spaces
-        for word in line.split_inclusive(|c: char| c.is_whitespace()) {
-            let color = calibrate_string_color(word.trim());
+        // Match to the pattern
+        for word in pattern.find_iter(line) {
+            let token = word.as_str();
 
-            for ch in word.chars() {
+            // Word cleanup and color calibration
+            let clean = token.trim_matches(|c: char| !c.is_alphanumeric() && c != '_');
+            let color = calibrate_string_color(clean);
+
+            for ch in token.chars() {
                 draw_text(&ch.to_string(), x, y, font_size, color);
 
                 let char_width = measure_text(&ch.to_string(), None, font_size as u16, 1.0).width;
@@ -221,13 +237,15 @@ pub fn draw(text: &Vec<String>, cursor_x: usize, cursor_y: usize) {
         let cursor_x_pos = start_x + text_before_cursor.width;
         let cursor_y_pos = start_y + cursor_y as f32 * line_spacing;
 
+        let cursor_width = 7.0;
+
         draw_line(
-            cursor_x_pos,
+            cursor_x_pos + cursor_width / 5.0,
             cursor_y_pos - font_size * 0.8,
-            cursor_x_pos,
+            cursor_x_pos + cursor_width / 5.0,
             cursor_y_pos + font_size * 0.2,
-            5.0,
-            WHITE,
+            cursor_width,
+            DEFAULT_TEXT_COLOR,
         );
     }
 }

@@ -10,6 +10,8 @@ use editor_text::*;
 
 #[macroquad::main("rakey")]
 async fn main() {
+    set_fullscreen(true);
+
     let mut file_text: Vec<String> = vec![];
     let mut file_cursor = ( 0, 0 );
 
