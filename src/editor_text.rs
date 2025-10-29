@@ -59,6 +59,11 @@ const C_DATA_TYPES: [&str ; 9] = [
     "unsigned"
 ];
 
+fn char_to_byte(line: &str, char_idx: usize) -> usize {
+    // We use UTF-8 so we need to count bytes NOT characters like C.
+    line.char_indices().nth(char_idx).map(|(b, _)| b).unwrap_or(line.len())
+}
+
 pub fn calibrate_string_color(string: &str) -> Color {
     if C_CONTROL_FLOW_STATEMENTS.contains(&string) {
         return Color::from_rgba(150, 150, 200, ALPHA_VALUE);
@@ -90,14 +95,12 @@ pub fn record_special_keys(cursor_x: &mut usize, cursor_y: &mut usize, text: &mu
             if *cursor_x >= TAB_SIZE {
                 let end = *cursor_x;
                 let start = end - TAB_SIZE;
-                if &line[start..end] == TAB_PATTERN {
-                    // remove the tab (4 spaces)
-                    for _ in 0..TAB_SIZE {
-                        line.remove(start);
-                    }
 
+                let end_byte = char_to_byte(line, end);
+                let start_byte = char_to_byte(line, start);
+                if &line[start_byte..end_byte] == TAB_PATTERN {
+                    line.replace_range(start_byte..end_byte, "");
                     *cursor_x -= TAB_SIZE;
-
                     return true;
                 }
             }
@@ -119,9 +122,9 @@ pub fn record_special_keys(cursor_x: &mut usize, cursor_y: &mut usize, text: &mu
     }
 
     if is_key_pressed(KeyCode::Tab) {
-        for i in 0..TAB_SIZE {
-            text[*cursor_y].insert(*cursor_x as usize + i, ' ');
-        }
+        let line = &mut text[*cursor_y];
+        let byte_idx = char_to_byte(line, *cursor_x);
+        line.insert_str(byte_idx, TAB_PATTERN);
 
         *cursor_x += TAB_SIZE;
 
@@ -168,7 +171,9 @@ pub fn record_keyboard_to_file_text(cursor_x: &mut usize, cursor_y: &mut usize, 
             }
 
             _ => {
-                line.insert(*cursor_x, c); // Normal insertion.
+                let byte_idx = char_to_byte(line, *cursor_x);
+
+                line.insert(byte_idx, c); // Normal insertion.
                 *cursor_x += 1;
             }
         }
