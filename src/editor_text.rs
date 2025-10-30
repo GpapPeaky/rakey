@@ -19,8 +19,8 @@ const TAB_SIZE: usize = 5;
 const TAB_PATTERN: &str = "     ";
 
 pub const BACKGROUND_COLOR: Color     = Color::from_rgba(0, 0, 0, 255);         // Black — terminal background
-const IDENTIFIER_COLOR: Color         = Color::from_rgba(0, 255, 255, 255);     // Bright cyan — variables/functions
-const PUNCTUATION_COLOR: Color        = Color::from_rgba(229, 229, 229, 255);   // White — punctuation
+const IDENTIFIER_COLOR: Color         = Color::from_rgba(255,150, 100, 255);     
+const PUNCTUATION_COLOR: Color        = Color::from_rgba(255, 255, 255, 255);   // White — punctuation
 const CONTROL_FLOW_COLOR: Color       = Color::from_rgba(0, 0, 238, 255);       // Blue — if, else, return
 const STORAGE_CLASS_COLOR: Color      = Color::from_rgba(255, 0, 0, 255);       // Bright red — static, extern
 const TYPE_QUALIFIER_COLOR: Color     = Color::from_rgba(255, 230, 100, 255);   // Bright yellow — const, volatile
@@ -31,8 +31,8 @@ const NUMBER_LITERAL_COLOR: Color     = Color::from_rgba(205, 205, 0, 255);     
 const STRING_LITERAL_COLOR: Color     = Color::from_rgba(0, 205, 205, 255);     // Cyan — strings
 const COMMENT_COLOR: Color            = Color::from_rgba(205, 0, 0, 255);       // Red — comments
 const CURSOR_COLOR: Color             = Color::from_rgba(255, 255, 255, 255);   // White — cursor
-// const FUNCTION_COLOR
-// const MACRO_COLOR
+const MACRO_COLOR: Color              = Color::from_rgba(255, 255, 0, 255);     // Bright yellow - macros
+const MAIN_COLOR: Color               = Color::from_rgba(100, 26, 200, 255);
 
 const C_CONTROL_FLOW_STATEMENTS: [&str ; 12] = [
     "if",
@@ -351,6 +351,8 @@ pub fn draw(text: &Vec<String>, cursor_x: usize, cursor_y: usize) {
 
             let color = if token.starts_with("//") || token.starts_with("/*") {
                 COMMENT_COLOR
+            } else if token.trim_start().starts_with("#") {
+                MACRO_COLOR
             } else if token.starts_with('"') && token.ends_with('"') {
                 STRING_LITERAL_COLOR
             } else if token.chars().all(|c| c.is_whitespace()) {
@@ -359,8 +361,10 @@ pub fn draw(text: &Vec<String>, cursor_x: usize, cursor_y: usize) {
                 PUNCTUATION_COLOR
             } else if token.chars().all(|c| c.is_ascii_digit() || c == '.') {
                 NUMBER_LITERAL_COLOR
+            } else if token == "main" {
+                MAIN_COLOR
             } else {
-                // Normal identifiers/keywords
+                // Normal identifiers like variable names and functions
                 let clean = token.trim_matches(|c: char| !c.is_alphanumeric() && c != '_');
                 calibrate_string_color(clean)
             };
