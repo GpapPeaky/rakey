@@ -1,23 +1,16 @@
 use macroquad::prelude::*;
 
-#[path = "editor_sound.rs"]
-mod editor_sound;
-use editor_sound::*;
-
-pub fn file_text_navigation(cursor: &mut (usize, usize), text: &mut Vec<String>) {
+#[allow(dead_code)] // Compiler will not shut the fuck up.
+pub async fn file_text_navigation(cursor: &mut (usize, usize), text: &mut Vec<String>) {
     if is_key_pressed(KeyCode::Up) {
         if cursor.1 > 0 {
             cursor.1 -= 1
-        } else {
-            // navigation_alert();
         }
     }
 
     if is_key_pressed(KeyCode::Down) {
         if text.len() > cursor.1 + 1 {
             cursor.1 += 1;
-        } else {
-            // navigation_alert();
         }
     }
 
@@ -28,8 +21,6 @@ pub fn file_text_navigation(cursor: &mut (usize, usize), text: &mut Vec<String>)
             // Move to end of previous line
             cursor.1 -= 1;
             cursor.0 = text[cursor.1].len();
-        } else {
-            // navigation_alert();
         }
     }
 
@@ -40,8 +31,6 @@ pub fn file_text_navigation(cursor: &mut (usize, usize), text: &mut Vec<String>)
             // Move to start of next line
             cursor.1 += 1;
             cursor.0 = 0;
-        } else {
-            // navigation_alert();
         }
     }
 }

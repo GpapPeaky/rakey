@@ -2,6 +2,8 @@ use macroquad::prelude::*;
 use once_cell::sync::Lazy;
 use regex::Regex;
 
+use crate::editor_audio::EditorAudio;
+
 #[path = "editor_cursor.rs"]
 mod editor_cursor;
 
@@ -105,8 +107,10 @@ fn calibrate_string_color(string: &str) -> Color {
     }
 }
 
-pub fn record_special_keys(cursor_x: &mut usize, cursor_y: &mut usize, text: &mut Vec<String>) -> bool {
+pub fn record_special_keys(cursor_x: &mut usize, cursor_y: &mut usize, text: &mut Vec<String>, audio: &EditorAudio) -> bool {
     if is_key_pressed(KeyCode::Backspace) {
+        audio.play_delete();
+
         if text.is_empty() {
             return true;
         }
@@ -154,6 +158,8 @@ pub fn record_special_keys(cursor_x: &mut usize, cursor_y: &mut usize, text: &mu
     }
 
     if is_key_pressed(KeyCode::Tab) {
+        audio.play_insert();
+
         let line = &mut text[*cursor_y];
         let byte_idx = char_to_byte(line, *cursor_x);
         line.insert_str(byte_idx, TAB_PATTERN);
@@ -161,7 +167,13 @@ pub fn record_special_keys(cursor_x: &mut usize, cursor_y: &mut usize, text: &mu
         return true;
     }
 
+    // if is_key_pressed(KeyCode::Space) {
+    //     audio.play_space();
+    // }
+
     if is_key_pressed(KeyCode::Enter) {
+        audio.play_return();
+
         let line = &mut text[*cursor_y];
         let rest = line.split_off(char_to_byte(line, *cursor_x));
         *cursor_y += 1;
@@ -173,14 +185,14 @@ pub fn record_special_keys(cursor_x: &mut usize, cursor_y: &mut usize, text: &mu
     false
 }
 
-pub fn record_keyboard_to_file_text(cursor_x: &mut usize, cursor_y: &mut usize, text: &mut Vec<String>) {
+pub fn record_keyboard_to_file_text(cursor_x: &mut usize, cursor_y: &mut usize, text: &mut Vec<String>, audio: &EditorAudio) {
     // let c = get_char_pressed().unwrap(); // Unwrap removes the Result/Option wrapper.
 
     if text.is_empty() { // Allocate memory for a new string
         text.push(String::new());
     }
 
-    if record_special_keys(cursor_x, cursor_y, text) {
+    if record_special_keys(cursor_x, cursor_y, text, audio) {
         return; // Handle the special key and terminate the call, as to 
         // not record any special escape character
     }
@@ -198,10 +210,16 @@ pub fn record_keyboard_to_file_text(cursor_x: &mut usize, cursor_y: &mut usize, 
             }
 
             _ => {
+                if c != ' ' { 
+                    audio.play_insert();
+                } else {
+                    audio.play_space();
+                }
+
                 let line = &mut text[*cursor_y];
 
                 let byte_idx = char_to_byte(line, *cursor_x);
-
+                
                 line.insert(byte_idx, c); // Normal insertion.
                 *cursor_x += 1;
             }
