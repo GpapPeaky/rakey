@@ -1,3 +1,10 @@
+// Editor text manipulation and rendering 
+// using a regex pattern to match highlight 
+// colouring.
+//
+// The editor's identation can be switched on/off
+// through the console.
+
 use macroquad::prelude::*;
 use once_cell::sync::Lazy;
 use regex::Regex;

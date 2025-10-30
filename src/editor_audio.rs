@@ -1,3 +1,5 @@
+// Editor audio module
+
 use macroquad::audio::{Sound, load_sound, play_sound_once};
 
 pub struct EditorAudio {

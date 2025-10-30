@@ -1,3 +1,5 @@
+// Cursor navigation module
+
 use macroquad::prelude::*;
 
 #[allow(dead_code)] // Compiler won't shut the fuck up
