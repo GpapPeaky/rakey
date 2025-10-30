@@ -32,6 +32,7 @@ const STRING_LITERAL_COLOR: Color     = Color::from_rgba(0, 205, 205, 255);     
 const COMMENT_COLOR: Color            = Color::from_rgba(205, 0, 0, 255);       // Red — comments
 const CURSOR_COLOR: Color             = Color::from_rgba(255, 255, 255, 255);   // White — cursor
 // const FUNCTION_COLOR
+// const MACRO_COLOR
 
 const C_CONTROL_FLOW_STATEMENTS: [&str ; 12] = [
     "if",
@@ -208,6 +209,90 @@ pub fn record_keyboard_to_file_text(cursor_x: &mut usize, cursor_y: &mut usize, 
                 // We also have to pre-terminate with these special characters,
                 // since input is passed in a queue
                 return; // Special characters will be handled elsewhere
+            }
+
+            '<' => {
+                let line = &mut text[*cursor_y];
+
+                let byte_idx = char_to_byte(line, *cursor_x);
+                
+                line.insert(byte_idx, c);
+                
+                *cursor_x += 1;
+                
+                let next_byte_idx = char_to_byte(line, *cursor_x);
+
+                line.insert(next_byte_idx, '>');
+            }
+
+            '(' => {
+                let line = &mut text[*cursor_y];
+
+                let byte_idx = char_to_byte(line, *cursor_x);
+                
+                line.insert(byte_idx, c);
+                
+                *cursor_x += 1;
+                
+                let next_byte_idx = char_to_byte(line, *cursor_x);
+
+                line.insert(next_byte_idx, ')');
+            }
+
+            '{' => {
+                let line = &mut text[*cursor_y];
+
+                let byte_idx = char_to_byte(line, *cursor_x);
+                
+                line.insert(byte_idx, c);
+                
+                *cursor_x += 1;
+                
+                let next_byte_idx = char_to_byte(line, *cursor_x);
+
+                line.insert(next_byte_idx, '}');
+            }
+
+            '\'' => {
+                let line = &mut text[*cursor_y];
+
+                let byte_idx = char_to_byte(line, *cursor_x);
+                
+                line.insert(byte_idx, c);
+                
+                *cursor_x += 1;
+                
+                let next_byte_idx = char_to_byte(line, *cursor_x);
+
+                line.insert(next_byte_idx, '\'');
+            }
+
+            '"' => {
+                let line = &mut text[*cursor_y];
+
+                let byte_idx = char_to_byte(line, *cursor_x);
+                
+                line.insert(byte_idx, c);
+                
+                *cursor_x += 1;
+                
+                let next_byte_idx = char_to_byte(line, *cursor_x);
+
+                line.insert(next_byte_idx, '"');
+            }
+
+            '[' => {
+                let line = &mut text[*cursor_y];
+
+                let byte_idx = char_to_byte(line, *cursor_x);
+                
+                line.insert(byte_idx, c);
+                
+                *cursor_x += 1;
+                
+                let next_byte_idx = char_to_byte(line, *cursor_x);
+
+                line.insert(next_byte_idx, ']');
             }
 
             _ => {
