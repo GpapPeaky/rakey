@@ -1,6 +1,6 @@
 use macroquad::prelude::*;
 
-#[allow(dead_code)] // Compiler will not shut the fuck up.
+#[allow(dead_code)] // Compiler won't shut the fuck up
 pub async fn file_text_navigation(cursor: &mut (usize, usize), text: &mut Vec<String>) {
     if is_key_pressed(KeyCode::Up) {
         if cursor.1 > 0 {

@@ -177,10 +177,17 @@ pub fn record_special_keys(cursor_x: &mut usize, cursor_y: &mut usize, text: &mu
     if is_key_pressed(KeyCode::Enter) {
         audio.play_return();
 
+        
         let line = &mut text[*cursor_y];
         let rest = line.split_off(char_to_byte(line, *cursor_x));
         *cursor_y += 1;
+
+        // Use smarter identation here
+
+        
+
         *cursor_x = 0;
+        
         text.insert(*cursor_y, rest);
         return true;
     }

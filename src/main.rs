@@ -16,7 +16,7 @@ async fn main() {
     
     let audio = EditorAudio::load().await;
     let mut file_text: Vec<String> = vec![];
-    let mut file_cursor = ( 0, 0 );
+    let mut file_cursor = ( 0, 0 ); // Cursor's x and y
     
     loop {
         clear_background(BACKGROUND_COLOR);
