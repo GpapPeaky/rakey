@@ -15,6 +15,13 @@ async fn main() {
     set_fullscreen(true);
     
     let audio = EditorAudio::load().await;
+
+    // General text stylizer
+    let mut gts: GeneralTextStylizer = GeneralTextStylizer {
+                                            font: load_ttf_font("assets/font/scp_reg.ttf").await.unwrap(),
+                                            font_size: 25,
+                                            color: WHITE
+                                        };
     let mut file_text: Vec<String> = vec![];
     let mut file_cursor = ( 0, 0 ); // Cursor's x and y
     
@@ -25,7 +32,7 @@ async fn main() {
 
         record_keyboard_to_file_text(&mut file_cursor.0, &mut file_cursor.1, &mut file_text, &audio);
 
-        draw(&mut file_text, file_cursor.0, file_cursor.1);
+        draw(&mut file_text, file_cursor.0, file_cursor.1, &mut gts);
 
         draw_fps();
 

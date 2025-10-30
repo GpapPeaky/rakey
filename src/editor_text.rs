@@ -14,6 +14,19 @@ use crate::editor_audio::EditorAudio;
 #[path = "editor_cursor.rs"]
 mod editor_cursor;
 
+pub struct GeneralTextStylizer {
+    pub font: Font,
+    pub font_size: u16,
+    pub color: Color
+}
+
+impl GeneralTextStylizer {
+    fn draw(&self, text: &str, x: f32, y: f32){
+        draw_text_ex(text, x, y,
+            TextParams { font: Some(&self.font), font_size: self.font_size, color: self.color, ..Default::default() });
+    }
+}
+
 // Regex pattern order matters: comments, strings, numbers, words, punctuation, whitespace
 static TOKEN_PATTERN: Lazy<Regex> = Lazy::new(|| {
     Regex::new(
@@ -180,7 +193,6 @@ pub fn record_special_keys(cursor_x: &mut usize, cursor_y: &mut usize, text: &mu
     if is_key_pressed(KeyCode::Enter) {
         audio.play_return();
 
-        
         let line = &mut text[*cursor_y];
         let rest = line.split_off(char_to_byte(line, *cursor_x));
         *cursor_y += 1;
@@ -335,26 +347,25 @@ pub fn record_keyboard_to_file_text(cursor_x: &mut usize, cursor_y: &mut usize, 
     }
 }
 
-pub fn draw(text: &Vec<String>, cursor_x: usize, cursor_y: usize) {
+pub fn draw(text: &Vec<String>, cursor_x: usize, cursor_y: usize, gts: &mut GeneralTextStylizer) {
     let start_x = FILE_TEXT_X_MARGIN;
     let start_y = FILE_TEXT_Y_MARGIN;
-    let font_size = 25.0;
-    let line_spacing = font_size;
+    let line_spacing =  gts.font_size as f32;
     
     // Draw cursor
     if cursor_y < text.len() {
         let line = &text[cursor_y];
         let cursor_text = &line[..cursor_x.min(line.len())];
-        let text_before_cursor = measure_text(cursor_text, None, font_size as u16, 1.0);
+        let text_before_cursor = measure_text(cursor_text, Some(&gts.font), gts.font_size, 1.0);
         let cursor_x_pos = start_x + text_before_cursor.width;
         let cursor_y_pos = start_y + cursor_y as f32 * line_spacing;
         let cursor_width = 4.0;
 
         draw_line(
-            cursor_x_pos + cursor_width / 5.0,
-            cursor_y_pos - font_size * 0.8,
-            cursor_x_pos + cursor_width / 5.0,
-            cursor_y_pos + font_size * 0.2,
+            cursor_x_pos,
+            cursor_y_pos - gts.font_size as f32 * 0.8,
+            cursor_x_pos,
+            cursor_y_pos + gts.font_size as f32  * 0.2,
             cursor_width,
             CURSOR_COLOR,
         );
@@ -390,12 +401,14 @@ pub fn draw(text: &Vec<String>, cursor_x: usize, cursor_y: usize) {
                 calibrate_string_color(clean)
             };
 
-            // Draw token at once
-            draw_text(token, x, y, font_size, color);
+            // Draw token at once using the general text stylizer
+            gts.color = color;
+            gts.draw(token, x, y);
+            // draw_text(token, x, y, gts.font_size, color);
 
             // More effective cursor movement
             // Avoid cursor x/y calibration per character
-            let token_width = measure_text(token, None, font_size as u16, 1.0).width;
+            let token_width = measure_text(token, Some(&gts.font), gts.font_size, 1.0).width;
             x += token_width;
         }
     }
