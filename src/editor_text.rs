@@ -402,6 +402,8 @@ pub fn draw(text: &Vec<String>, cursor_x: usize, cursor_y: usize, gts: &mut Gene
                 calibrate_string_color(clean)
             };
 
+            // FIXME Strings inside (str) are not coloured properly.
+
             // Draw token at once using the general text stylizer
             gts.color = color;
             gts.draw(token, x, y);

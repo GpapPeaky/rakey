@@ -10,7 +10,7 @@ use editor_cursor::*;
 mod editor_text;
 use editor_text::*;
 
-#[macroquad::main("rakey")]
+#[macroquad::main("Calliope")]
 async fn main() {
     set_fullscreen(true);
     
