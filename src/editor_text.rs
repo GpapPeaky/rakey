@@ -9,8 +9,9 @@ mod editor_cursor;
 
 // Regex pattern order matters: comments, strings, numbers, words, punctuation, whitespace
 static TOKEN_PATTERN: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r#"//[^\n]*|/\*.*?\*/|"(?:\\.|[^"\\])*"|\b\d+(?:\.\d+)?\b|[\w\*]+|[^\w\s]+|\s+"#)
-        .unwrap()
+    Regex::new(
+        r#"//[^\n]*|/\*.*?\*/|"(?:\\.|[^"\\])*"|<[^>\n]+>|\b\d+(\.\d+)?([fF]\b)?\b|#[\w_]+|[\w\*]+|[^\w\s]+|\s+"#
+    ).unwrap()
 });
 
 const FILE_TEXT_X_MARGIN: f32 = 50.0;
@@ -353,13 +354,13 @@ pub fn draw(text: &Vec<String>, cursor_x: usize, cursor_y: usize) {
                 COMMENT_COLOR
             } else if token.trim_start().starts_with("#") {
                 MACRO_COLOR
-            } else if token.starts_with('"') && token.ends_with('"') {
+            } else if (token.starts_with('"') && token.ends_with('"')) || (token.starts_with('<') && token.ends_with('>')) {
                 STRING_LITERAL_COLOR
             } else if token.chars().all(|c| c.is_whitespace()) {
                 IDENTIFIER_COLOR
             } else if token.chars().all(|c| !c.is_alphanumeric() && !c.is_whitespace() && c != '_') {
                 PUNCTUATION_COLOR
-            } else if token.chars().all(|c| c.is_ascii_digit() || c == '.') {
+            } else if TOKEN_PATTERN.is_match(token) && token.chars().any(|c| c.is_ascii_digit()) {
                 NUMBER_LITERAL_COLOR
             } else if token == "main" {
                 MAIN_COLOR
