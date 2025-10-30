@@ -36,24 +36,25 @@ static TOKEN_PATTERN: Lazy<Regex> = Lazy::new(|| {
 
 const FILE_TEXT_X_MARGIN: f32 = 50.0;
 const FILE_TEXT_Y_MARGIN: f32 = 60.0;
-const TAB_SIZE: usize = 5;
-const TAB_PATTERN: &str = "     ";
+const TAB_SIZE: usize = 4;
+const TAB_PATTERN: &str = "    ";
 
-pub const BACKGROUND_COLOR: Color     = Color::from_rgba(0, 0, 0, 255);         // Black — terminal background
-const IDENTIFIER_COLOR: Color         = Color::from_rgba(255,150, 100, 255);     
-const PUNCTUATION_COLOR: Color        = Color::from_rgba(255, 255, 255, 255);   // White — punctuation
-const CONTROL_FLOW_COLOR: Color       = Color::from_rgba(0, 0, 238, 255);       // Blue — if, else, return
-const STORAGE_CLASS_COLOR: Color      = Color::from_rgba(255, 0, 0, 255);       // Bright red — static, extern
-const TYPE_QUALIFIER_COLOR: Color     = Color::from_rgba(255, 230, 100, 255);   // Bright yellow — const, volatile
-const COMPOSITE_TYPE_COLOR: Color     = Color::from_rgba(205, 0, 205, 255);     // Magenta — struct, enum
-const MISC_COLOR: Color               = Color::from_rgba(100, 180, 255, 255);   // Bright blue — sizeof, inline
-const DATA_TYPE_COLOR: Color          = Color::from_rgba(0, 205, 0, 255);       // Green — int, char, void
-const NUMBER_LITERAL_COLOR: Color     = Color::from_rgba(205, 205, 0, 255);     // Yellow — numeric literals
-const STRING_LITERAL_COLOR: Color     = Color::from_rgba(0, 205, 205, 255);     // Cyan — strings
-const COMMENT_COLOR: Color            = Color::from_rgba(205, 0, 0, 255);       // Red — comments
-const CURSOR_COLOR: Color             = Color::from_rgba(255, 255, 255, 255);   // White — cursor
-const MACRO_COLOR: Color              = Color::from_rgba(255, 255, 0, 255);     // Bright yellow - macros
-const MAIN_COLOR: Color               = Color::from_rgba(100, 26, 200, 255);
+// Romantica
+pub const BACKGROUND_COLOR: Color     = Color::from_rgba(12, 0, 20, 255);        // Deep violet — sensual background
+const IDENTIFIER_COLOR: Color         = Color::from_rgba(240, 223, 155, 255);    // Sandy yellow — identifiers pop
+const PUNCTUATION_COLOR: Color        = Color::from_rgba(255, 255, 255, 255);    // Pure white — contrast clarity
+const CONTROL_FLOW_COLOR: Color       = Color::from_rgba(0, 180, 255, 255);      // Electric cyan — flow pops
+const STORAGE_CLASS_COLOR: Color      = Color::from_rgba(255, 45, 85, 255);      // Scarlet red — dominant & fierce
+const TYPE_QUALIFIER_COLOR: Color     = Color::from_rgba(255, 190, 70, 255);     // Honey gold — smooth, glowing
+const COMPOSITE_TYPE_COLOR: Color     = Color::from_rgba(205, 0, 255, 255);      // Neon purple — exotic & rich
+const MISC_COLOR: Color               = Color::from_rgba(80, 180, 255, 255);     // Ice blue — chill accent
+const DATA_TYPE_COLOR: Color          = Color::from_rgba(0, 255, 170, 255);      // Teal — lush & alive
+const NUMBER_LITERAL_COLOR: Color     = Color::from_rgba(255, 240, 90, 255);     // Luminous gold — flashy values
+const STRING_LITERAL_COLOR: Color     = Color::from_rgba(255, 80, 180, 255);     // Passion pink — string seduction
+const COMMENT_COLOR: Color            = Color::from_rgba(140, 140, 140, 255);    // Smoky gray — whispers, not shouts
+const CURSOR_COLOR: Color             = Color::from_rgba(255, 0, 180, 255);      // Magenta flash — your heartbeat
+const MACRO_COLOR: Color              = Color::from_rgba(255, 100, 0, 255);      // Lava orange — raw energy
+const MAIN_COLOR: Color               = Color::from_rgba(140, 0, 255, 255);      // Royal violet — command presence
 
 const C_CONTROL_FLOW_STATEMENTS: [&str ; 12] = [
     "if",
