@@ -5,20 +5,26 @@ use macroquad::audio::{Sound, load_sound, play_sound_once};
 pub struct EditorAudio {
     pub insert: Sound,
     pub delete: Sound,
-    pub space: Sound,
-    pub enter: Sound
+    pub space:  Sound,
+    pub enter:  Sound,
+    pub nav:    Sound
 }
 
 impl EditorAudio {
     pub async fn load() -> Self {
         let editor_audio =  EditorAudio {
             insert: load_sound("assets/sound/insert.wav").await.unwrap(),
-            delete: load_sound("assets/sound/del.wav").await.unwrap(),
-            space: load_sound("assets/sound/space.wav").await.unwrap(),
-            enter: load_sound("assets/sound/return.wav").await.unwrap()
+            delete: load_sound("assets/sound/del.wav"   ).await.unwrap(),
+            enter:  load_sound("assets/sound/return.wav").await.unwrap(),
+            space:  load_sound("assets/sound/space.wav" ).await.unwrap(),
+            nav:    load_sound("assets/sound/nav.wav"   ).await.unwrap()
         };
 
         editor_audio
+    }
+
+    pub fn play_nav(&self) {
+        play_sound_once(&self.nav);
     }
 
     pub fn play_insert(&self) {

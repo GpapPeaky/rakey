@@ -21,7 +21,7 @@ async fn main() {
     loop {
         clear_background(BACKGROUND_COLOR);
 
-        file_text_navigation(&mut file_cursor, &mut file_text).await;
+        file_text_navigation(&mut file_cursor, &mut file_text, &audio).await;
 
         record_keyboard_to_file_text(&mut file_cursor.0, &mut file_cursor.1, &mut file_text, &audio);
 

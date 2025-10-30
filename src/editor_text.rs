@@ -177,10 +177,6 @@ pub fn record_special_keys(cursor_x: &mut usize, cursor_y: &mut usize, text: &mu
         return true;
     }
 
-    // if is_key_pressed(KeyCode::Space) {
-    //     audio.play_space();
-    // }
-
     if is_key_pressed(KeyCode::Enter) {
         audio.play_return();
 
@@ -189,9 +185,7 @@ pub fn record_special_keys(cursor_x: &mut usize, cursor_y: &mut usize, text: &mu
         let rest = line.split_off(char_to_byte(line, *cursor_x));
         *cursor_y += 1;
 
-        // Use smarter identation here
-
-        
+        // TODO: Smarter identation here
 
         *cursor_x = 0;
         
@@ -227,6 +221,8 @@ pub fn record_keyboard_to_file_text(cursor_x: &mut usize, cursor_y: &mut usize, 
             }
 
             '<' => {
+                audio.play_insert();
+
                 let line = &mut text[*cursor_y];
 
                 let byte_idx = char_to_byte(line, *cursor_x);
@@ -241,6 +237,8 @@ pub fn record_keyboard_to_file_text(cursor_x: &mut usize, cursor_y: &mut usize, 
             }
 
             '(' => {
+                audio.play_insert();
+
                 let line = &mut text[*cursor_y];
 
                 let byte_idx = char_to_byte(line, *cursor_x);
@@ -255,6 +253,8 @@ pub fn record_keyboard_to_file_text(cursor_x: &mut usize, cursor_y: &mut usize, 
             }
 
             '{' => {
+                audio.play_insert();
+
                 let line = &mut text[*cursor_y];
 
                 let byte_idx = char_to_byte(line, *cursor_x);
@@ -269,6 +269,8 @@ pub fn record_keyboard_to_file_text(cursor_x: &mut usize, cursor_y: &mut usize, 
             }
 
             '\'' => {
+                audio.play_insert();
+
                 let line = &mut text[*cursor_y];
 
                 let byte_idx = char_to_byte(line, *cursor_x);
@@ -283,6 +285,8 @@ pub fn record_keyboard_to_file_text(cursor_x: &mut usize, cursor_y: &mut usize, 
             }
 
             '"' => {
+                audio.play_insert();
+
                 let line = &mut text[*cursor_y];
 
                 let byte_idx = char_to_byte(line, *cursor_x);
@@ -297,6 +301,8 @@ pub fn record_keyboard_to_file_text(cursor_x: &mut usize, cursor_y: &mut usize, 
             }
 
             '[' => {
+                audio.play_insert();
+
                 let line = &mut text[*cursor_y];
 
                 let byte_idx = char_to_byte(line, *cursor_x);

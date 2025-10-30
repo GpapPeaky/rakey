@@ -27,6 +27,7 @@
 //              :audio  : Audio on/off switch
 //              :e      : Exit, close editor
 //              :smart  : Smart identation on/off switch
+//              :v <N>  : Set editor sounds volume
 //
 // When the console is faced with a directive without a ':' prefix
 // it will view it as a switch-to-file command and will try to switch 
