@@ -9,19 +9,19 @@ const FILE_TEXT_Y_MARGIN: f32 = 60.0;
 const TAB_SIZE: usize = 5;
 const TAB_PATTERN: &str = "     ";
 
-pub const BACKGROUND_COLOR: Color     = Color::from_rgba( 30,  30,  36, 255);  // Deep gray-blue background
-const IDENTIFIER_COLOR: Color         = Color::from_rgba(220, 0, 155, 255);
-const PUNCTUATION_COLOR: Color        = Color::from_rgba(150, 150, 150, 255);  // Medium gray
-const CONTROL_FLOW_COLOR: Color       = Color::from_rgba(198, 120, 221, 255);  // Soft purple (if, else, return)
-const STORAGE_CLASS_COLOR: Color      = Color::from_rgba( 97, 175, 239, 255);  // Bright sky blue (static, extern)
-const TYPE_QUALIFIER_COLOR: Color     = Color::from_rgba(229, 192, 123, 255);  // Warm yellow (const, volatile)
-const COMPOSITE_TYPE_COLOR: Color     = Color::from_rgba(224, 108, 117, 255);  // Red-pink (struct, enum)
-const MISC_COLOR: Color               = Color::from_rgba(209, 154, 102, 255);  // Orange-brown (sizeof, inline)
-const DATA_TYPE_COLOR: Color          = Color::from_rgba( 86, 182, 194, 255);  // Teal (int, char, void)
-const NUMBER_LITERAL_COLOR: Color     = Color::from_rgba(152, 195, 121, 255);  // Green (numeric literals)
-const STRING_LITERAL_COLOR: Color     = Color::from_rgba(171, 233, 137, 255);  // Lime-green (strings)
-const COMMENT_COLOR: Color            = Color::from_rgba( 92,  99, 112, 255);  // Dim gray (comments)
-
+pub const BACKGROUND_COLOR: Color     = Color::from_rgba(27, 36, 33, 255);     // Deep olive green — shade of olive leaves in shadow
+const IDENTIFIER_COLOR: Color         = Color::from_rgba(226, 186, 120, 255);  // Wheat gold — sunlit stone & dry grass
+const PUNCTUATION_COLOR: Color        = Color::from_rgba(140, 130, 115, 255);  // Weathered limestone gray
+const CONTROL_FLOW_COLOR: Color       = Color::from_rgba(61, 130, 191, 255);   // Aegean blue — sea near Chania
+const STORAGE_CLASS_COLOR: Color      = Color::from_rgba(108, 174, 186, 255);  // Turquoise — shallow coastal waters
+const TYPE_QUALIFIER_COLOR: Color     = Color::from_rgba(197, 165, 103, 255);  // Olive-gold — ripe olive tone
+const COMPOSITE_TYPE_COLOR: Color     = Color::from_rgba(177, 87, 52, 255);    // Terracotta red — Cretan pottery & soil
+const MISC_COLOR: Color               = Color::from_rgba(205, 142, 79, 255);   // Honey amber — warm neutral accent
+const DATA_TYPE_COLOR: Color          = Color::from_rgba(93, 166, 131, 255);   // Sage green — mountain herbs
+const NUMBER_LITERAL_COLOR: Color     = Color::from_rgba(147, 200, 120, 255);  // Leaf green — olive groves
+const STRING_LITERAL_COLOR: Color     = Color::from_rgba(185, 228, 255, 255);  // Pale sky blue — summer light
+const COMMENT_COLOR: Color            = Color::from_rgba(0, 255, 40, 255);     // Green
+const CURSOR_COLOR: Color             = Color::from_rgba(255, 243, 204, 255);  // Sunlight beige — stands out gently on olive background
 
 const C_CONTROL_FLOW_STATEMENTS: [&str ; 12] = [
     "if",
@@ -78,7 +78,7 @@ fn char_to_byte(line: &str, char_idx: usize) -> usize {
     line.char_indices().nth(char_idx).map(|(b, _)| b).unwrap_or(line.len())
 }
 
-pub fn calibrate_string_color(string: &str) -> Color {
+fn calibrate_string_color(string: &str) -> Color {
     if C_CONTROL_FLOW_STATEMENTS.contains(&string) {
         return CONTROL_FLOW_COLOR;
     } else if C_TYPE_QUALIFIERS.contains(&string) {
@@ -208,6 +208,25 @@ pub fn draw(text: &Vec<String>, cursor_x: usize, cursor_y: usize) {
     let start_y = FILE_TEXT_Y_MARGIN;
     let font_size = 25.0;
     let line_spacing = font_size;
+    
+    // Draw cursor
+    if cursor_y < text.len() {
+        let line = &text[cursor_y];
+        let cursor_text = &line[..cursor_x.min(line.len())];
+        let text_before_cursor = measure_text(cursor_text, None, font_size as u16, 1.0);
+        let cursor_x_pos = start_x + text_before_cursor.width;
+        let cursor_y_pos = start_y + cursor_y as f32 * line_spacing;
+        let cursor_width = 4.0;
+
+        draw_line(
+            cursor_x_pos + cursor_width / 5.0,
+            cursor_y_pos - font_size * 0.8,
+            cursor_x_pos + cursor_width / 5.0,
+            cursor_y_pos + font_size * 0.2,
+            cursor_width,
+            CURSOR_COLOR,
+        );
+    }
 
     let mut x;
     let mut y;
@@ -246,24 +265,5 @@ pub fn draw(text: &Vec<String>, cursor_x: usize, cursor_y: usize) {
                 x += char_width;
             }
         }
-    }
-
-    // Draw cursor
-    if cursor_y < text.len() {
-        let line = &text[cursor_y];
-        let cursor_text = &line[..cursor_x.min(line.len())];
-        let text_before_cursor = measure_text(cursor_text, None, font_size as u16, 1.0);
-        let cursor_x_pos = start_x + text_before_cursor.width;
-        let cursor_y_pos = start_y + cursor_y as f32 * line_spacing;
-        let cursor_width = 7.0;
-
-        draw_line(
-            cursor_x_pos + cursor_width / 5.0,
-            cursor_y_pos - font_size * 0.8,
-            cursor_x_pos + cursor_width / 5.0,
-            cursor_y_pos + font_size * 0.2,
-            cursor_width,
-            IDENTIFIER_COLOR,
-        );
     }
 }

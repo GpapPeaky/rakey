@@ -12,9 +12,10 @@ use editor_text::*;
 async fn main() {
     set_fullscreen(true);
 
+    
     let mut file_text: Vec<String> = vec![];
     let mut file_cursor = ( 0, 0 );
-
+    
     loop {
         clear_background(BACKGROUND_COLOR);
 
