@@ -1,8 +1,15 @@
 use macroquad::prelude::*;
+use once_cell::sync::Lazy;
 use regex::Regex;
 
 #[path = "editor_cursor.rs"]
 mod editor_cursor;
+
+// Regex pattern order matters: comments, strings, numbers, words, punctuation, whitespace
+static TOKEN_PATTERN: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r#"//[^\n]*|/\*.*?\*/|"(?:\\.|[^"\\])*"|\b\d+(?:\.\d+)?\b|[\w\*]+|[^\w\s]+|\s+"#)
+        .unwrap()
+});
 
 const FILE_TEXT_X_MARGIN: f32 = 50.0;
 const FILE_TEXT_Y_MARGIN: f32 = 60.0;
@@ -229,18 +236,13 @@ pub fn draw(text: &Vec<String>, cursor_x: usize, cursor_y: usize) {
     }
 
     let mut x;
-    let mut y;
-
-    // Regex pattern order matters: comments, strings, numbers, words, punctuation, whitespace
-    let token_pattern = Regex::new(
-        r#"//[^\n]*|/\*.*?\*/|"(?:\\.|[^"\\])*"|\b\d+(?:\.\d+)?\b|[\w\*]+|[^\w\s]+|\s+"#
-    ).unwrap();
+    let mut y;    
 
     for (line_index, line) in text.iter().enumerate() {
         x = start_x;
         y = start_y + line_index as f32 * line_spacing;
 
-        for cap in token_pattern.find_iter(line) {
+        for cap in TOKEN_PATTERN.find_iter(line) {
             let token = cap.as_str();
 
             let color = if token.starts_with("//") || token.starts_with("/*") {
@@ -259,11 +261,13 @@ pub fn draw(text: &Vec<String>, cursor_x: usize, cursor_y: usize) {
                 calibrate_string_color(clean)
             };
 
-            for ch in token.chars() {
-                draw_text(&ch.to_string(), x, y, font_size, color);
-                let char_width = measure_text(&ch.to_string(), None, font_size as u16, 1.0).width;
-                x += char_width;
-            }
+            // Draw token at once
+            draw_text(token, x, y, font_size, color);
+
+            // More effective cursor movement
+            // Avoid cursor x/y calibration per character
+            let token_width = measure_text(token, None, font_size as u16, 1.0).width;
+            x += token_width;
         }
     }
 }
