@@ -18,19 +18,20 @@ const FILE_TEXT_Y_MARGIN: f32 = 60.0;
 const TAB_SIZE: usize = 5;
 const TAB_PATTERN: &str = "     ";
 
-pub const BACKGROUND_COLOR: Color     = Color::from_rgba(27, 36, 33, 255);     // Deep olive green — shade of olive leaves in shadow
-const IDENTIFIER_COLOR: Color         = Color::from_rgba(226, 186, 120, 255);  // Wheat gold — sunlit stone & dry grass
-const PUNCTUATION_COLOR: Color        = Color::from_rgba(140, 130, 115, 255);  // Weathered limestone gray
-const CONTROL_FLOW_COLOR: Color       = Color::from_rgba(61, 130, 191, 255);   // Aegean blue — sea near Chania
-const STORAGE_CLASS_COLOR: Color      = Color::from_rgba(108, 174, 186, 255);  // Turquoise — shallow coastal waters
-const TYPE_QUALIFIER_COLOR: Color     = Color::from_rgba(197, 165, 103, 255);  // Olive-gold — ripe olive tone
-const COMPOSITE_TYPE_COLOR: Color     = Color::from_rgba(177, 87, 52, 255);    // Terracotta red — Cretan pottery & soil
-const MISC_COLOR: Color               = Color::from_rgba(205, 142, 79, 255);   // Honey amber — warm neutral accent
-const DATA_TYPE_COLOR: Color          = Color::from_rgba(93, 166, 131, 255);   // Sage green — mountain herbs
-const NUMBER_LITERAL_COLOR: Color     = Color::from_rgba(147, 200, 120, 255);  // Leaf green — olive groves
-const STRING_LITERAL_COLOR: Color     = Color::from_rgba(185, 228, 255, 255);  // Pale sky blue — summer light
-const COMMENT_COLOR: Color            = Color::from_rgba(0, 255, 40, 255);     // Green
-const CURSOR_COLOR: Color             = Color::from_rgba(255, 243, 204, 255);  // Sunlight beige — stands out gently on olive background
+pub const BACKGROUND_COLOR: Color     = Color::from_rgba(0, 0, 0, 255);         // Black — terminal background
+const IDENTIFIER_COLOR: Color         = Color::from_rgba(0, 255, 255, 255);     // Bright cyan — variables/functions
+const PUNCTUATION_COLOR: Color        = Color::from_rgba(229, 229, 229, 255);   // White — punctuation
+const CONTROL_FLOW_COLOR: Color       = Color::from_rgba(0, 0, 238, 255);       // Blue — if, else, return
+const STORAGE_CLASS_COLOR: Color      = Color::from_rgba(255, 0, 0, 255);       // Bright red — static, extern
+const TYPE_QUALIFIER_COLOR: Color     = Color::from_rgba(255, 230, 100, 255);   // Bright yellow — const, volatile
+const COMPOSITE_TYPE_COLOR: Color     = Color::from_rgba(205, 0, 205, 255);     // Magenta — struct, enum
+const MISC_COLOR: Color               = Color::from_rgba(100, 180, 255, 255);   // Bright blue — sizeof, inline
+const DATA_TYPE_COLOR: Color          = Color::from_rgba(0, 205, 0, 255);       // Green — int, char, void
+const NUMBER_LITERAL_COLOR: Color     = Color::from_rgba(205, 205, 0, 255);     // Yellow — numeric literals
+const STRING_LITERAL_COLOR: Color     = Color::from_rgba(0, 205, 205, 255);     // Cyan — strings
+const COMMENT_COLOR: Color            = Color::from_rgba(205, 0, 0, 255);       // Red — comments
+const CURSOR_COLOR: Color             = Color::from_rgba(255, 255, 255, 255);   // White — cursor
+// const FUNCTION_COLOR
 
 const C_CONTROL_FLOW_STATEMENTS: [&str ; 12] = [
     "if",
