@@ -1,6 +1,8 @@
 use macroquad::prelude::*;
 
-#[path = "editor_audio.rs"]
+mod editor_console;
+use editor_console::*;
+
 mod editor_audio;
 use editor_audio::*;
 
@@ -16,20 +18,21 @@ async fn main() {
     
     // Editor audio
     let audio = EditorAudio::new().await;
-    // General text stylizer
+    // Editor general text stylizer
     let mut gts = EditorGeneralTextStylizer::new().await;
-
-    let mut file_text: Vec<String> = vec![];
+    // Editor Cursor
     let mut file_cursor = EditorCursor::new(); // Cursor's x and y
+    // Console
+    let mut console = EditorConsole::new();
+
+    let mut file_text = vec![];
     
     loop {
         clear_background(BACKGROUND_COLOR);
 
-        file_text_navigation(&mut file_cursor.xy, &mut file_text, &audio).await;
+        record_keyboard_to_file_text(&mut file_cursor, &mut file_text, &audio, &mut console);
 
-        record_keyboard_to_file_text(&mut file_cursor.xy.0, &mut file_cursor.xy.1, &mut file_text, &audio);
-
-        draw(&mut file_text, file_cursor.xy.0, file_cursor.xy.1, &mut gts);
+        draw(&mut file_text, file_cursor.xy.0, file_cursor.xy.1, &mut gts, &console);
 
         draw_fps();
 

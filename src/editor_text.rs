@@ -11,6 +11,10 @@ use regex::Regex;
 
 use crate::editor_audio::EditorAudio;
 
+use crate::editor_cursor::*;
+
+use crate::editor_console::EditorConsole;
+
 #[path = "editor_cursor.rs"]
 mod editor_cursor;
 
@@ -23,8 +27,8 @@ pub struct EditorGeneralTextStylizer {
 impl EditorGeneralTextStylizer {
     pub async fn new() -> EditorGeneralTextStylizer {
         EditorGeneralTextStylizer {
-            font: load_ttf_font("assets/font/scp_reg.ttf").await.unwrap(),
-            font_size: 25,
+            font: load_ttf_font("assets/font/fs-pixel-sans-unicode-regular.ttf").await.unwrap(),
+            font_size: 50,
             color: WHITE
         }
     }
@@ -41,6 +45,9 @@ static TOKEN_PATTERN: Lazy<Regex> = Lazy::new(|| {
         r#"//[^\n]*|/\*.*?\*/|"(?:\\.|[^"\\])*"|<[^>\n]+>|\b\d+(\.\d+)?([fF]\b)?\b|#[\w_]+|[\w\*]+|[^\w\s]+|\s+"#
     ).unwrap()
 });
+
+const FILE_LINE_NUMBER_X_MARGIN: f32 = 5.0;
+const FILE_LINE_NUMBER_Y_MARGIN: f32 = 6.0;
 
 const FILE_TEXT_X_MARGIN: f32 = 50.0;
 const FILE_TEXT_Y_MARGIN: f32 = 60.0;
@@ -113,11 +120,15 @@ const C_DATA_TYPES: [&str ; 9] = [
     "unsigned"
 ];
 
+/// Convert a provided character index to the actual byte
+/// the character is at. Allows for UTF-8 characters
+/// and not only ASCII
 fn char_to_byte(line: &str, char_idx: usize) -> usize {
     // We use UTF-8 so we need to count bytes NOT characters like C.
     line.char_indices().nth(char_idx).map(|(b, _)| b).unwrap_or(line.len())
 }
 
+/// Calibrate the color of a token
 fn calibrate_string_color(string: &str) -> Color {
     if C_CONTROL_FLOW_STATEMENTS.contains(&string) {
         return CONTROL_FLOW_COLOR;
@@ -138,7 +149,8 @@ fn calibrate_string_color(string: &str) -> Color {
     }
 }
 
-pub fn record_special_keys(cursor_x: &mut usize, cursor_y: &mut usize, text: &mut Vec<String>, audio: &EditorAudio) -> bool {
+/// Record special key presses
+pub fn record_special_keys(cursor: &mut EditorCursor, text: &mut Vec<String>, audio: &EditorAudio, console: &mut EditorConsole) -> bool {
     if is_key_pressed(KeyCode::Backspace) {
         audio.play_delete();
 
@@ -147,22 +159,22 @@ pub fn record_special_keys(cursor_x: &mut usize, cursor_y: &mut usize, text: &mu
         }
     
         // Clamp cursor_x to line length
-        let line = &mut text[*cursor_y];
+        let line = &mut text[cursor.xy.1];
         let line_len = line.chars().count();
-        *cursor_x = (*cursor_x).min(line_len);
+        cursor.xy.0 = (cursor.xy.0).min(line_len);
     
-        if *cursor_x == 0 {
+        if cursor.xy.0 == 0 {
             // Merge with previous line if possible
-            if *cursor_y > 0 {
-                let current_line = text.remove(*cursor_y);
-                *cursor_y -= 1;
-                *cursor_x = text[*cursor_y].chars().count();
-                text[*cursor_y].push_str(&current_line);
+            if cursor.xy.1 > 0 {
+                let current_line = text.remove(cursor.xy.1);
+                cursor.xy.1 -= 1;
+                cursor.xy.0 = text[cursor.xy.1].chars().count();
+                text[cursor.xy.1].push_str(&current_line);
             }
             return true;
         }
     
-        let cursor_pos = *cursor_x;
+        let cursor_pos = cursor.xy.0;
     
         // Tab deletion
         if cursor_pos >= TAB_SIZE {
@@ -173,7 +185,7 @@ pub fn record_special_keys(cursor_x: &mut usize, cursor_y: &mut usize, text: &mu
     
             if &line[start_byte..end_byte] == TAB_PATTERN {
                 line.replace_range(start_byte..end_byte, "");
-                *cursor_x -= TAB_SIZE;
+                cursor.xy.0 -= TAB_SIZE;
                 return true;
             }
         }
@@ -182,7 +194,7 @@ pub fn record_special_keys(cursor_x: &mut usize, cursor_y: &mut usize, text: &mu
         let byte_idx = char_to_byte(line, cursor_pos - 1);
         if byte_idx < line.len() {
             line.remove(byte_idx);
-            *cursor_x -= 1;
+            cursor.xy.0 -= 1;
         }
     
         return true;
@@ -191,46 +203,61 @@ pub fn record_special_keys(cursor_x: &mut usize, cursor_y: &mut usize, text: &mu
     if is_key_pressed(KeyCode::Tab) {
         audio.play_space();
 
-        let line = &mut text[*cursor_y];
-        let byte_idx = char_to_byte(line, *cursor_x);
+        let line = &mut text[cursor.xy.1];
+        let byte_idx = char_to_byte(line, cursor.xy.0);
         line.insert_str(byte_idx, TAB_PATTERN);
-        *cursor_x += TAB_SIZE;
+        cursor.xy.0 += TAB_SIZE;
         return true;
     }
 
     if is_key_pressed(KeyCode::Enter) {
         audio.play_return();
 
-        let line = &mut text[*cursor_y];
-        let rest = line.split_off(char_to_byte(line, *cursor_x));
-        *cursor_y += 1;
+        let line = &mut text[cursor.xy.1];
+        let rest = line.split_off(char_to_byte(line, cursor.xy.0));
+        cursor.xy.1 += 1;
 
         // TODO: Smarter identation here
 
-        *cursor_x = 0;
+        cursor.xy.0 = 0;
         
-        text.insert(*cursor_y, rest);
+        text.insert(cursor.xy.1, rest);
         return true;
+    }
+
+    // More special keys
+    if is_key_down(KeyCode::LeftControl) {
+        // Console switch
+        if is_key_pressed(KeyCode::GraveAccent) {
+            console.mode = !console.mode; 
+        }
+
+        file_text_special_navigation(&mut cursor.xy, text, audio);
+
+        return true;
+    } else {
+        file_text_navigation(&mut cursor.xy, text, audio);
     }
 
     false
 }
 
-pub fn record_keyboard_to_file_text(cursor_x: &mut usize, cursor_y: &mut usize, text: &mut Vec<String>, audio: &EditorAudio) {
+/// Standard key recording function
+pub fn record_keyboard_to_file_text(cursor: &mut EditorCursor, text: &mut Vec<String>, audio: &EditorAudio, console: &mut EditorConsole) {
     // let c = get_char_pressed().unwrap(); // Unwrap removes the Result/Option wrapper.
 
     if text.is_empty() { // Allocate memory for a new string
         text.push(String::new());
     }
 
-    if record_special_keys(cursor_x, cursor_y, text, audio) {
+    if record_special_keys(cursor, text, audio, console) {
         return; // Handle the special key and terminate the call, as to 
         // not record any special escape character
     }
 
     if let Some(c) = get_char_pressed() {
         // We will also handle smart/smarter identation here.
-        while *cursor_y >= text.len() {
+        while cursor.xy.1 >= text.len() {
             text.push(String::new());
         }
         match c {
@@ -243,15 +270,15 @@ pub fn record_keyboard_to_file_text(cursor_x: &mut usize, cursor_y: &mut usize, 
             '<' => {
                 audio.play_insert();
 
-                let line = &mut text[*cursor_y];
+                let line = &mut text[cursor.xy.1];
 
-                let byte_idx = char_to_byte(line, *cursor_x);
+                let byte_idx = char_to_byte(line, cursor.xy.0);
                 
                 line.insert(byte_idx, c);
                 
-                *cursor_x += 1;
+                cursor.xy.0 += 1;
                 
-                let next_byte_idx = char_to_byte(line, *cursor_x);
+                let next_byte_idx = char_to_byte(line, cursor.xy.0);
 
                 line.insert(next_byte_idx, '>');
             }
@@ -259,15 +286,15 @@ pub fn record_keyboard_to_file_text(cursor_x: &mut usize, cursor_y: &mut usize, 
             '(' => {
                 audio.play_insert();
 
-                let line = &mut text[*cursor_y];
+                let line = &mut text[cursor.xy.1];
 
-                let byte_idx = char_to_byte(line, *cursor_x);
+                let byte_idx = char_to_byte(line, cursor.xy.0);
                 
                 line.insert(byte_idx, c);
                 
-                *cursor_x += 1;
+                cursor.xy.0 += 1;
                 
-                let next_byte_idx = char_to_byte(line, *cursor_x);
+                let next_byte_idx = char_to_byte(line, cursor.xy.0);
 
                 line.insert(next_byte_idx, ')');
             }
@@ -275,15 +302,15 @@ pub fn record_keyboard_to_file_text(cursor_x: &mut usize, cursor_y: &mut usize, 
             '{' => {
                 audio.play_insert();
 
-                let line = &mut text[*cursor_y];
+                let line = &mut text[cursor.xy.1];
 
-                let byte_idx = char_to_byte(line, *cursor_x);
+                let byte_idx = char_to_byte(line, cursor.xy.0);
                 
                 line.insert(byte_idx, c);
                 
-                *cursor_x += 1;
+                cursor.xy.0 += 1;
                 
-                let next_byte_idx = char_to_byte(line, *cursor_x);
+                let next_byte_idx = char_to_byte(line, cursor.xy.0);
 
                 line.insert(next_byte_idx, '}');
             }
@@ -291,15 +318,15 @@ pub fn record_keyboard_to_file_text(cursor_x: &mut usize, cursor_y: &mut usize, 
             '\'' => {
                 audio.play_insert();
 
-                let line = &mut text[*cursor_y];
+                let line = &mut text[cursor.xy.1];
 
-                let byte_idx = char_to_byte(line, *cursor_x);
+                let byte_idx = char_to_byte(line, cursor.xy.0);
                 
                 line.insert(byte_idx, c);
                 
-                *cursor_x += 1;
+                cursor.xy.0 += 1;
                 
-                let next_byte_idx = char_to_byte(line, *cursor_x);
+                let next_byte_idx = char_to_byte(line, cursor.xy.0);
 
                 line.insert(next_byte_idx, '\'');
             }
@@ -307,15 +334,15 @@ pub fn record_keyboard_to_file_text(cursor_x: &mut usize, cursor_y: &mut usize, 
             '"' => {
                 audio.play_insert();
 
-                let line = &mut text[*cursor_y];
+                let line = &mut text[cursor.xy.1];
 
-                let byte_idx = char_to_byte(line, *cursor_x);
+                let byte_idx = char_to_byte(line, cursor.xy.0);
                 
                 line.insert(byte_idx, c);
                 
-                *cursor_x += 1;
+                cursor.xy.0 += 1;
                 
-                let next_byte_idx = char_to_byte(line, *cursor_x);
+                let next_byte_idx = char_to_byte(line, cursor.xy.0);
 
                 line.insert(next_byte_idx, '"');
             }
@@ -323,15 +350,15 @@ pub fn record_keyboard_to_file_text(cursor_x: &mut usize, cursor_y: &mut usize, 
             '[' => {
                 audio.play_insert();
 
-                let line = &mut text[*cursor_y];
+                let line = &mut text[cursor.xy.1];
 
-                let byte_idx = char_to_byte(line, *cursor_x);
+                let byte_idx = char_to_byte(line, cursor.xy.0);
                 
                 line.insert(byte_idx, c);
                 
-                *cursor_x += 1;
+                cursor.xy.0 += 1;
                 
-                let next_byte_idx = char_to_byte(line, *cursor_x);
+                let next_byte_idx = char_to_byte(line, cursor.xy.0);
 
                 line.insert(next_byte_idx, ']');
             }
@@ -343,19 +370,20 @@ pub fn record_keyboard_to_file_text(cursor_x: &mut usize, cursor_y: &mut usize, 
                     audio.play_space();
                 }
 
-                let line = &mut text[*cursor_y];
+                let line = &mut text[cursor.xy.1];
 
-                let byte_idx = char_to_byte(line, *cursor_x);
+                let byte_idx = char_to_byte(line, cursor.xy.0);
                 
                 line.insert(byte_idx, c); // Normal insertion.
-                *cursor_x += 1;
+                cursor.xy.0 += 1;
             }
         }
  
     }
 }
 
-pub fn draw(text: &Vec<String>, cursor_x: usize, cursor_y: usize, gts: &mut EditorGeneralTextStylizer) {
+/// Text drawing function
+pub fn draw(text: &Vec<String>, cursor_x: usize, cursor_y: usize, gts: &mut EditorGeneralTextStylizer, console: &EditorConsole) {
     let start_x = FILE_TEXT_X_MARGIN;
     let start_y = FILE_TEXT_Y_MARGIN;
     let line_spacing = gts.font_size as f32;
@@ -367,14 +395,24 @@ pub fn draw(text: &Vec<String>, cursor_x: usize, cursor_y: usize, gts: &mut Edit
         let text_before_cursor = measure_text(cursor_text, Some(&gts.font), gts.font_size, 1.0);
         let cursor_x_pos = start_x + text_before_cursor.width;
         let cursor_y_pos = start_y + cursor_y as f32 * line_spacing;
-        let cursor_width = 1.2;
 
-        draw_line(
+        // Cursor width, either of the current char size, or static 2.0px
+        let cursor_width = if CURSOR_LINE_TO_WIDTH && cursor_x < line.len() {
+            measure_text(
+                &line.chars().nth(cursor_x).unwrap().to_string(),
+                Some(&gts.font),
+                gts.font_size,
+                1.0,
+            ).width
+        } else {
+            2.0
+        };
+
+        draw_rectangle(
             cursor_x_pos,
             cursor_y_pos - gts.font_size as f32 * 0.8,
-            cursor_x_pos,
-            cursor_y_pos + gts.font_size as f32  * 0.2,
             cursor_width,
+            gts.font_size as f32,
             CURSOR_COLOR,
         );
     }
@@ -425,5 +463,25 @@ pub fn draw(text: &Vec<String>, cursor_x: usize, cursor_y: usize, gts: &mut Edit
             let token_width = measure_text(token, Some(&gts.font), gts.font_size, 1.0).width;
             x += token_width;
         }
+    }
+
+    // Draw line numbers
+    gts.color = CURSOR_COLOR;
+
+    let text_len;
+    if text.is_empty() {
+        text_len = 0;
+    } else {
+        text_len = text.len();
+    }
+
+    for i in 0..text_len {
+        gts.draw(&i.to_string(), FILE_LINE_NUMBER_X_MARGIN,
+            1.1 * FILE_TEXT_X_MARGIN + FILE_LINE_NUMBER_Y_MARGIN + gts.font_size as f32 * i as f32
+        );
+    }
+    
+    if console.mode {
+        console.draw();
     }
 }

@@ -36,6 +36,8 @@
 //              :eav <N>    : Set editor audio volume to N
 //              :esi        : Smart identation on/off switch
 //              :efl        : Editor fullscreen switch
+//              :ehi        : Editor highlighting toggle
+//              :ewt        : Editor cursor width toggle
 //      Other:
 //              :e          : Exit, close editor
 //              :egman      : Editor general manual (All manuals are displayed)
