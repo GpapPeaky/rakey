@@ -14,13 +14,21 @@ use crate::editor_audio::EditorAudio;
 #[path = "editor_cursor.rs"]
 mod editor_cursor;
 
-pub struct GeneralTextStylizer {
+pub struct EditorGeneralTextStylizer {
     pub font: Font,
     pub font_size: u16,
     pub color: Color
 }
 
-impl GeneralTextStylizer {
+impl EditorGeneralTextStylizer {
+    pub async fn new() -> EditorGeneralTextStylizer {
+        EditorGeneralTextStylizer {
+            font: load_ttf_font("assets/font/scp_reg.ttf").await.unwrap(),
+            font_size: 25,
+            color: WHITE
+        }
+    }
+
     fn draw(&self, text: &str, x: f32, y: f32){
         draw_text_ex(text, x, y,
             TextParams { font: Some(&self.font), font_size: self.font_size, color: self.color, ..Default::default() });
@@ -36,25 +44,24 @@ static TOKEN_PATTERN: Lazy<Regex> = Lazy::new(|| {
 
 const FILE_TEXT_X_MARGIN: f32 = 50.0;
 const FILE_TEXT_Y_MARGIN: f32 = 60.0;
-const TAB_SIZE: usize = 4;
-const TAB_PATTERN: &str = "    ";
+const TAB_SIZE: usize = 6;
+const TAB_PATTERN: &str = "      ";
 
-// Euterpe
-pub const BACKGROUND_COLOR: Color     = Color::from_rgba(10, 5, 30, 255);       // Concert night — deep and resonant
-const IDENTIFIER_COLOR: Color         = Color::from_rgba(100, 200, 255, 255);   // Light blue — melodic threads
-const PUNCTUATION_COLOR: Color        = Color::from_rgba(255, 255, 255, 255);   // Pure white — beat clarity
-const CONTROL_FLOW_COLOR: Color       = Color::from_rgba(90, 120, 255, 255);    // Vibrant blue — motion and tempo
-const STORAGE_CLASS_COLOR: Color      = Color::from_rgba(255, 60, 150, 255);    // Hot magenta — passion and accent
-const TYPE_QUALIFIER_COLOR: Color     = Color::from_rgba(255, 220, 100, 255);   // Gold — harmonic warmth
-const COMPOSITE_TYPE_COLOR: Color     = Color::from_rgba(160, 100, 255, 255);   // Violet tone — chord structure
-const MISC_COLOR: Color               = Color::from_rgba(0, 220, 200, 255);     // Aqua — rhythmic shimmer
-const DATA_TYPE_COLOR: Color          = Color::from_rgba(0, 255, 160, 255);     // Green-blue — tonal life
-const NUMBER_LITERAL_COLOR: Color     = Color::from_rgba(255, 240, 120, 255);   // Bright gold — time and measure
-const STRING_LITERAL_COLOR: Color     = Color::from_rgba(190, 120, 255, 255);   // Lush purple — melody line
-const COMMENT_COLOR: Color            = Color::from_rgba(120, 120, 140, 255);   // Soft gray — distant harmony
-const CURSOR_COLOR: Color             = Color::from_rgba(255, 0, 220, 255);     // Magenta flash — live note
-const MACRO_COLOR: Color              = Color::from_rgba(255, 120, 40, 255);    // Orange — accent staccato
-const MAIN_COLOR: Color               = Color::from_rgba(90, 40, 255, 255);     // Royal indigo — emotional resonance
+pub const BACKGROUND_COLOR: Color     = Color::from_rgba(8, 0, 15, 255);        // Theater dark — emotional void
+const IDENTIFIER_COLOR: Color         = Color::from_rgba(190, 140, 230, 255);   // Pale violet — fateful names
+const PUNCTUATION_COLOR: Color        = Color::from_rgba(255, 255, 255, 255);   // White — clarity in despair
+const CONTROL_FLOW_COLOR: Color       = Color::from_rgba(130, 100, 255, 255);   // Tragic blue — falling motion
+const STORAGE_CLASS_COLOR: Color      = Color::from_rgba(255, 70, 110, 255);    // Crimson sorrow — bleeding intent
+const TYPE_QUALIFIER_COLOR: Color     = Color::from_rgba(255, 210, 90, 255);    // Pale gold — faded grandeur
+const COMPOSITE_TYPE_COLOR: Color     = Color::from_rgba(140, 0, 180, 255);     // Dark purple — structure of fate
+const MISC_COLOR: Color               = Color::from_rgba(100, 130, 200, 255);   // Twilight blue — haunting echo
+const DATA_TYPE_COLOR: Color          = Color::from_rgba(60, 190, 150, 255);    // Teal — fragile balance
+const NUMBER_LITERAL_COLOR: Color     = Color::from_rgba(255, 235, 150, 255);   // Candle gold — memory counts
+const STRING_LITERAL_COLOR: Color     = Color::from_rgba(255, 120, 170, 255);   // Mourning rose — spoken sorrow
+const COMMENT_COLOR: Color            = Color::from_rgba(100, 90, 110, 255);    // Smoke gray — whispered lament
+const CURSOR_COLOR: Color             = Color::from_rgba(255, 0, 130, 255);     // Magenta glow — pulse of pain
+const MACRO_COLOR: Color              = Color::from_rgba(255, 110, 0, 255);     // Ember orange — spark of catharsis
+const MAIN_COLOR: Color               = Color::from_rgba(180, 60, 255, 255);    // Regal violet — tragic beauty
 
 const C_CONTROL_FLOW_STATEMENTS: [&str ; 12] = [
     "if",
@@ -182,7 +189,7 @@ pub fn record_special_keys(cursor_x: &mut usize, cursor_y: &mut usize, text: &mu
     }
 
     if is_key_pressed(KeyCode::Tab) {
-        audio.play_insert();
+        audio.play_space();
 
         let line = &mut text[*cursor_y];
         let byte_idx = char_to_byte(line, *cursor_x);
@@ -348,10 +355,10 @@ pub fn record_keyboard_to_file_text(cursor_x: &mut usize, cursor_y: &mut usize, 
     }
 }
 
-pub fn draw(text: &Vec<String>, cursor_x: usize, cursor_y: usize, gts: &mut GeneralTextStylizer) {
+pub fn draw(text: &Vec<String>, cursor_x: usize, cursor_y: usize, gts: &mut EditorGeneralTextStylizer) {
     let start_x = FILE_TEXT_X_MARGIN;
     let start_y = FILE_TEXT_Y_MARGIN;
-    let line_spacing =  gts.font_size as f32;
+    let line_spacing = gts.font_size as f32;
     
     // Draw cursor
     if cursor_y < text.len() {
@@ -360,7 +367,7 @@ pub fn draw(text: &Vec<String>, cursor_x: usize, cursor_y: usize, gts: &mut Gene
         let text_before_cursor = measure_text(cursor_text, Some(&gts.font), gts.font_size, 1.0);
         let cursor_x_pos = start_x + text_before_cursor.width;
         let cursor_y_pos = start_y + cursor_y as f32 * line_spacing;
-        let cursor_width = 4.0;
+        let cursor_width = 1.2;
 
         draw_line(
             cursor_x_pos,
@@ -402,7 +409,11 @@ pub fn draw(text: &Vec<String>, cursor_x: usize, cursor_y: usize, gts: &mut Gene
                 calibrate_string_color(clean)
             };
 
+            // FIXME Negative number colouring with a '-' is colored as a punctuation
             // FIXME Strings inside (str) are not coloured properly.
+            // FIXME Strings broken by newlines are not colored properly.
+            // FIXME Macros when brocken by white space, not colored properly.
+            // FIXME Numbers inside identifiers, get coloured as numbers
 
             // Draw token at once using the general text stylizer
             gts.color = color;

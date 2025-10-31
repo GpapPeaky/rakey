@@ -4,6 +4,18 @@ use macroquad::prelude::*;
 
 use crate::editor_audio::EditorAudio;
 
+#[allow(dead_code)]
+pub struct EditorCursor {
+    pub xy: (usize, usize)
+}
+
+impl EditorCursor {
+    #[allow(dead_code)]
+    pub fn new() -> EditorCursor {
+        EditorCursor { xy: (0, 0) }
+    }
+}
+
 #[allow(dead_code)] // Compiler won't shut the fuck up
 pub async fn file_text_navigation(cursor: &mut (usize, usize), text: &mut Vec<String>, audio: &EditorAudio) {
     // TODO make up an down keys move to the same column if possible, else the smaller one.

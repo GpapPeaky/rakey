@@ -11,7 +11,7 @@ pub struct EditorAudio {
 }
 
 impl EditorAudio {
-    pub async fn load() -> Self {
+    pub async fn new() -> Self {
         let editor_audio =  EditorAudio {
             insert: load_sound("assets/sound/insert.wav").await.unwrap(),
             delete: load_sound("assets/sound/del.wav"   ).await.unwrap(),
