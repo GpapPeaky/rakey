@@ -12,7 +12,7 @@ use editor_cursor::*;
 mod editor_text;
 use editor_text::*;
 
-#[macroquad::main("Calliope")]
+#[macroquad::main("Muse")]
 async fn main() {
     set_fullscreen(true);
     

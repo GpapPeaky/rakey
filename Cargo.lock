@@ -3,7 +3,7 @@
 version = 4
 
 [[package]]
-name = "Calliope"
+name = "Muse"
 version = "0.1.0"
 dependencies = [
  "macroquad",
