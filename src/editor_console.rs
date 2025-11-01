@@ -3,6 +3,8 @@
 
 use macroquad::prelude::*;
 
+use crate::editor_text::*;
+
 pub struct EditorConsole {
     pub mode: bool,
     pub directive: Option<String>,
@@ -24,15 +26,15 @@ impl EditorConsole {
             0.0,
             CONSOLE_WIDTH,
             screen_height(),
-        WHITE
+            COMPOSITE_TYPE_COLOR
         );
 
         // Console foreground
-        draw_rectangle(screen_width() - CONSOLE_WIDTH + 1.0,
+        draw_rectangle(screen_width() - CONSOLE_WIDTH + 1.5,
             0.0,
             CONSOLE_WIDTH,
             screen_height(),
-            WHITE
+            BACKGROUND_COLOR
         );
     }
 }
